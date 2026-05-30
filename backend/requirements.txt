@@ -1,0 +1,41 @@
+# Core
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+python-dotenv
+python-multipart
+
+# LangChain / LangGraph
+langgraph
+langchain
+langchain-community
+langchain-core
+langchain-text-splitters
+
+# LLM providers
+langchain-ollama
+langchain-groq
+
+# Embeddings
+langchain-huggingface
+sentence-transformers
+
+# Vector stores
+langchain-chroma
+chromadb
+
+# Web search
+ddgs
+
+# PDF support
+pypdf
+
+# HTTP client for health checks
+httpx
+
+#slowapi
+slowapi
+
+#wikipedia
+wikipedia

@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.env
+.env.production
+*.egg-info/
+
+# Data
+data/chroma_db/
+logs/
+*.sqlite3
+
+# Firebase
+firebase-service-account.json
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.env.production
+
+# IDE
+.DS_Store
+.vscode/
+.idea/
