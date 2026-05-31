@@ -39,3 +39,6 @@ slowapi
 
 #wikipedia
 wikipedia
+
+pinecone
+langchain-pinecone
