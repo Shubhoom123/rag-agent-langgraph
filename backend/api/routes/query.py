@@ -51,7 +51,6 @@ def _build_agent():
         logger.info("Node: rewrite_query")
         question = state["question"]
 
-        # Skip rewrite for short simple questions
         if len(question.split()) <= 6:
             logger.info("Short question — skipping rewrite")
             return {"rewritten_question": question}
@@ -127,18 +126,22 @@ def _build_agent():
 
     # ------------------------------------------------------------------
     # Node 4 — Web Search + Wikipedia
+    # Docs stored in state only — NOT written to Pinecone
     # ------------------------------------------------------------------
     def web_search_node(state: GraphState):
         logger.info("Node: web_search")
         retries = state.get("retries", 0) + 1
         query = state.get("rewritten_question") or state["question"]
+        temp_docs = []
 
-        # ------------------------------------------------------------------
-        # Source 1 — Wikipedia (structured, reliable)
-        # ------------------------------------------------------------------
+        # Source 1 — Wikipedia
         try:
             import wikipedia
             import time
+
+            wikipedia.set_user_agent(
+                "RAGAgent/1.0 (educational project; contact via github)"
+            )
 
             search_results = wikipedia.search(query, results=2)
             wiki_docs = []
@@ -146,46 +149,69 @@ def _build_agent():
             for title in search_results[:2]:
                 try:
                     page = wikipedia.page(title, auto_suggest=False)
-                    content = page.content[:1500]
                     wiki_docs.append(
                         Document(
-                            page_content=content,
+                            page_content=page.content[:1500],
                             metadata={
                                 "source": f"wikipedia:{title}",
                                 "url": page.url,
+                                "temporary": True,
                             }
                         )
                     )
-                    time.sleep(0.3)
-                except Exception:
+                    time.sleep(0.5)
+                except wikipedia.DisambiguationError as e:
+                    try:
+                        page = wikipedia.page(e.options[0], auto_suggest=False)
+                        wiki_docs.append(
+                            Document(
+                                page_content=page.content[:1500],
+                                metadata={
+                                    "source": f"wikipedia:{e.options[0]}",
+                                    "temporary": True,
+                                }
+                            )
+                        )
+                    except Exception:
+                        pass
+                except Exception as wiki_err:
+                    logger.warning(f"Wikipedia page error: {wiki_err}")
                     continue
 
             if wiki_docs:
                 chunks = splitter.split_documents(wiki_docs)
-                vectorstore.add_documents(chunks)
-                logger.info(f"Wikipedia added {len(chunks)} chunks")
+                temp_docs.extend(chunks)
+                logger.info(f"Wikipedia fetched {len(chunks)} chunks")
 
         except Exception as e:
             logger.warning(f"Wikipedia search failed: {e}")
 
-        # ------------------------------------------------------------------
-        # Source 2 — DuckDuckGo (fallback for recent/niche topics)
-        # ------------------------------------------------------------------
+        # Source 2 — DuckDuckGo
         try:
             from ddgs import DDGS
             with DDGS() as ddgs:
                 results = list(ddgs.text(query, max_results=2))
-            web_docs = [
-                Document(page_content=f"{r['title']}\n\n{r['body']}")
+            ddg_docs = [
+                Document(
+                    page_content=f"{r['title']}\n\n{r['body']}",
+                    metadata={"source": "duckduckgo", "temporary": True}
+                )
                 for r in results
             ]
-            if web_docs:
-                vectorstore.add_documents(web_docs)
-                logger.info(f"DuckDuckGo added {len(web_docs)} documents")
+            temp_docs.extend(ddg_docs)
+            logger.info(f"DuckDuckGo fetched {len(ddg_docs)} docs")
         except Exception as e:
-            logger.warning(f"DuckDuckGo search failed: {e}")
+            logger.warning(f"DuckDuckGo failed: {e}")
 
-        return {"retries": retries, "web_search_needed": False}
+        # Merge with existing Pinecone docs — temp docs NOT stored in Pinecone
+        existing_docs = state.get("documents", [])
+        all_docs = existing_docs + temp_docs
+
+        return {
+            "retries": retries,
+            "web_search_needed": False,
+            "documents": all_docs,
+        }
 
     # ------------------------------------------------------------------
     # Node 5 — Generate
@@ -197,7 +223,6 @@ def _build_agent():
             d.page_content[:200] for d in state["documents"]
         )
 
-        # Build conversation history string
         history_text = ""
         if state.get("history"):
             history_lines = []
@@ -237,7 +262,8 @@ def _build_agent():
         return "generate"
 
     # ------------------------------------------------------------------
-    # Graph
+    # Graph — web_search now goes directly to generate
+    # since docs are already in state
     # ------------------------------------------------------------------
     workflow = StateGraph(GraphState)
     workflow.add_node("rewrite_query", rewrite_query)
@@ -254,7 +280,8 @@ def _build_agent():
         decide_to_generate,
         {"generate": "generate", "web_search": "web_search"},
     )
-    workflow.add_edge("web_search", "retrieve")
+    # After web search docs are in state — go straight to generate
+    workflow.add_edge("web_search", "generate")
     workflow.add_edge("generate", END)
 
     return workflow.compile()
@@ -345,6 +372,7 @@ async def query_stream(
             "relevance_score": 0.0,
             "retries": 0,
             "web_search_needed": False,
+            "history": [],
         }
 
         try:
