@@ -41,4 +41,3 @@ slowapi
 wikipedia
 
 pinecone
-langchain-pinecone
