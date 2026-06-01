@@ -5,6 +5,7 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 export default function ChatWindow({ messages, setMessages, loading, setLoading }) {
   const [input, setInput] = useState("");
+  const [inputFocused, setInputFocused] = useState(false);
   const bottomRef = useRef();
   const textareaRef = useRef();
 
@@ -39,31 +40,20 @@ export default function ChatWindow({ messages, setMessages, loading, setLoading 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question, history }),
       });
-
       const data = await res.json();
-
       if (res.ok) {
-        setMessages([
-          ...newMessages,
-          {
-            role: "assistant",
-            text: data.answer,
-            sources: data.sources,
-            webSearchUsed: data.web_search_used,
-            retries: data.retries,
-          },
-        ]);
+        setMessages([...newMessages, {
+          role: "assistant",
+          text: data.answer,
+          sources: data.sources,
+          webSearchUsed: data.web_search_used,
+          retries: data.retries,
+        }]);
       } else {
-        setMessages([
-          ...newMessages,
-          { role: "error", text: data.detail || "Something went wrong." },
-        ]);
+        setMessages([...newMessages, { role: "error", text: data.detail || "Something went wrong." }]);
       }
     } catch {
-      setMessages([
-        ...newMessages,
-        { role: "error", text: "Could not reach the backend." },
-      ]);
+      setMessages([...newMessages, { role: "error", text: "Could not reach the backend." }]);
     } finally {
       setLoading(false);
     }
@@ -76,8 +66,8 @@ export default function ChatWindow({ messages, setMessages, loading, setLoading 
     }
   }
 
-  const chatTitle = messages.find((m) => m.role === "user")?.text?.slice(0, 40)
-    || "New Conversation";
+  const chatTitle = messages.find((m) => m.role === "user")?.text?.slice(0, 40) || "New Conversation";
+  const canSend = input.trim() && !loading;
 
   return (
     <main style={{
@@ -86,58 +76,55 @@ export default function ChatWindow({ messages, setMessages, loading, setLoading 
       flexDirection: "column",
       height: "100vh",
       overflow: "hidden",
-      background: "var(--bg)",
+      background: "#000000",
     }}>
-
       {/* Header */}
       <div style={{
         borderBottom: "1px solid var(--border)",
-        padding: "0 24px",
-        height: 56,
+        padding: "0 28px",
+        height: 58,
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        background: "var(--surface)",
+        background: "rgba(0,0,0,0.9)",
+        backdropFilter: "blur(12px)",
         flexShrink: 0,
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{
-            fontSize: "0.95rem",
-            fontWeight: 600,
-            color: "var(--text)",
-            letterSpacing: "-0.01em",
-            maxWidth: 400,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}>
-            {chatTitle}
-          </div>
+        <div style={{
+          fontSize: "0.95rem",
+          fontWeight: 500,
+          color: "var(--text)",
+          letterSpacing: "-0.01em",
+          maxWidth: 400,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}>
+          {chatTitle}
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {/* Model badge */}
           <div style={{
             display: "flex",
             alignItems: "center",
             gap: 6,
-            padding: "4px 10px",
-            borderRadius: "var(--radius)",
+            padding: "4px 12px",
+            borderRadius: 999,
             border: "1px solid var(--border)",
-            background: "var(--surface-2)",
-            cursor: "default",
+            background: "var(--surface)",
           }}>
             <div style={{
               width: 6,
               height: 6,
               borderRadius: "50%",
               background: "var(--accent)",
+              boxShadow: "0 0 6px var(--accent)",
             }} />
             <span style={{
               fontFamily: "var(--mono)",
               fontSize: "0.65rem",
               color: "var(--text-secondary)",
-              letterSpacing: "0.05em",
+              letterSpacing: "0.04em",
             }}>
               llama-3.1-8b
             </span>
@@ -171,7 +158,7 @@ export default function ChatWindow({ messages, setMessages, loading, setLoading 
         display: "flex",
         flexDirection: "column",
       }}>
-        {messages.length === 0 && <EmptyState />}
+        {messages.length === 0 && <EmptyState onSuggest={(q) => setInput(q)} />}
         {messages.map((msg, i) => (
           <Message key={i} message={msg} />
         ))}
@@ -181,39 +168,34 @@ export default function ChatWindow({ messages, setMessages, loading, setLoading 
 
       {/* Input area */}
       <div style={{
-        borderTop: "1px solid var(--border)",
-        padding: "12px 24px 16px",
-        background: "var(--surface)",
+        padding: "12px 24px 20px",
+        background: "rgba(0,0,0,0.95)",
+        backdropFilter: "blur(12px)",
         flexShrink: 0,
+        borderTop: "1px solid var(--border)",
       }}>
-        <div style={{
-          maxWidth: 760,
-          margin: "0 auto",
-        }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              background: "var(--surface-2)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--radius-lg)",
-              padding: "0 8px 0 14px",
-              minHeight: 44,
-              transition: `border-color var(--transition)`,
-            }}
-            onFocusCapture={(e) => {
-              e.currentTarget.style.borderColor = "var(--accent)";
-            }}
-            onBlurCapture={(e) => {
-              e.currentTarget.style.borderColor = "var(--border)";
-            }}
-          >
+        <div style={{ maxWidth: 760, margin: "0 auto" }}>
+          <div style={{
+            display: "flex",
+            alignItems: "flex-end",
+            gap: 10,
+            background: "var(--surface)",
+            border: `1px solid ${inputFocused ? "rgba(74,222,128,0.4)" : "var(--border)"}`,
+            borderRadius: "var(--radius-xl)",
+            padding: "8px 10px 8px 18px",
+            minHeight: 52,
+            transition: "border-color var(--transition), box-shadow var(--transition)",
+            boxShadow: inputFocused
+              ? "0 0 0 3px rgba(74,222,128,0.06), 0 0 20px rgba(74,222,128,0.08)"
+              : "none",
+          }}>
             <textarea
               ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
+              onFocus={() => setInputFocused(true)}
+              onBlur={() => setInputFocused(false)}
               placeholder="Message LangGraph..."
               rows={1}
               style={{
@@ -225,53 +207,52 @@ export default function ChatWindow({ messages, setMessages, loading, setLoading 
                 fontFamily: "var(--sans)",
                 fontSize: "0.9rem",
                 resize: "none",
-                lineHeight: 1.5,
-                padding: "11px 0",
+                lineHeight: 1.6,
+                padding: "6px 0",
                 maxHeight: 160,
               }}
             />
             <button
               onClick={handleSubmit}
-              disabled={!input.trim() || loading}
+              disabled={!canSend}
               style={{
-                width: 32,
-                height: 32,
-                background: input.trim() && !loading
-                  ? "var(--accent)" : "var(--disabled)",
+                width: 36,
+                height: 36,
+                background: canSend ? "var(--accent)" : "var(--surface-2)",
                 border: "none",
-                borderRadius: "var(--radius)",
+                borderRadius: "50%",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                cursor: input.trim() && !loading ? "pointer" : "not-allowed",
-                transition: `all var(--transition)`,
+                cursor: canSend ? "pointer" : "not-allowed",
+                transition: "all var(--transition)",
                 flexShrink: 0,
+                boxShadow: canSend ? "0 0 12px rgba(74,222,128,0.3)" : "none",
               }}
               onMouseEnter={(e) => {
-                if (input.trim() && !loading) {
-                  e.currentTarget.style.background = "var(--accent-dark)";
-                  e.currentTarget.style.transform = "scale(0.97)";
+                if (canSend) {
+                  e.currentTarget.style.background = "var(--accent-bright)";
+                  e.currentTarget.style.boxShadow = "0 0 20px rgba(74,222,128,0.5)";
                 }
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = input.trim() && !loading
-                  ? "var(--accent)" : "var(--disabled)";
-                e.currentTarget.style.transform = "scale(1)";
+                if (canSend) {
+                  e.currentTarget.style.background = "var(--accent)";
+                  e.currentTarget.style.boxShadow = "0 0 12px rgba(74,222,128,0.3)";
+                }
               }}
             >
-              <Send
-                size={13}
-                color={input.trim() && !loading ? "#0d1117" : "var(--text-muted)"}
-              />
+              <Send size={14} color={canSend ? "#000000" : "var(--text-dim)"} />
             </button>
           </div>
 
           <div style={{
             textAlign: "center",
-            marginTop: 8,
+            marginTop: 10,
             fontFamily: "var(--mono)",
-            fontSize: "0.65rem",
+            fontSize: "0.62rem",
             color: "var(--text-muted)",
+            letterSpacing: "0.03em",
           }}>
             Enter to send · Shift+Enter for new line
           </div>
@@ -281,7 +262,7 @@ export default function ChatWindow({ messages, setMessages, loading, setLoading 
   );
 }
 
-function EmptyState() {
+function EmptyState({ onSuggest }) {
   const suggestions = [
     "What is machine learning?",
     "Who is Nikola Tesla?",
@@ -296,105 +277,76 @@ function EmptyState() {
       flexDirection: "column",
       alignItems: "center",
       justifyContent: "center",
-      gap: 20,
+      gap: 28,
       padding: 48,
-      marginTop: "8vh",
-      background: "radial-gradient(ellipse at center, rgba(63,185,80,0.03) 0%, transparent 70%)",
     }}>
+      {/* Gemini-style central glow orb */}
       <div style={{
-        width: 56,
-        height: 56,
-        borderRadius: "var(--radius-lg)",
-        background: "var(--surface-2)",
-        border: "1px solid var(--border)",
+        width: 72,
+        height: 72,
+        borderRadius: "50%",
+        background: "radial-gradient(circle at center, rgba(74,222,128,0.3) 0%, rgba(74,222,128,0.08) 50%, transparent 70%)",
+        boxShadow: "0 0 60px 20px rgba(74,222,128,0.12), 0 0 120px 50px rgba(74,222,128,0.05)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        animation: "glowPulse 3s ease-in-out infinite",
       }}>
-        <img
-          src="/favicon_64.png"
-          alt="agent"
-          style={{
-            width: 28,
-            height: 28,
-            objectFit: "contain",
-            filter: "invert(1) brightness(0.7) sepia(1) saturate(5) hue-rotate(95deg)",
-          }}
-        />
+        <div style={{
+          width: 14,
+          height: 14,
+          borderRadius: "50%",
+          background: "#4ade80",
+          boxShadow: "0 0 10px #4ade80, 0 0 20px rgba(74,222,128,0.6)",
+        }} />
       </div>
 
       <div style={{ textAlign: "center" }}>
         <div style={{
-          fontSize: "0.95rem",
-          fontWeight: 600,
+          fontSize: "1.6rem",
+          fontWeight: 500,
           color: "var(--text)",
-          letterSpacing: "-0.01em",
-          marginBottom: 6,
+          letterSpacing: "-0.02em",
         }}>
-          LangGraph RAG Agent
-        </div>
-        <div style={{
-          fontFamily: "var(--mono)",
-          fontSize: "0.75rem",
-          color: "var(--text-muted)",
-          lineHeight: 1.8,
-        }}>
-          Clean, minimal, and powerful.
+          How can I help you today?
         </div>
       </div>
 
-      {/* Feature pills */}
-      <div style={{
-        display: "flex",
-        gap: 8,
-        flexWrap: "wrap",
-        justifyContent: "center",
-      }}>
-        {["Self-Correcting RAG", "Wikipedia Aware", "Web Fallback"].map((f) => (
-          <div key={f} style={{
-            padding: "4px 12px",
-            borderRadius: 999,
-            background: "var(--accent-dim)",
-            border: "1px solid var(--border)",
-            fontFamily: "var(--mono)",
-            fontSize: "0.65rem",
-            color: "var(--accent)",
-            letterSpacing: "0.04em",
-          }}>
-            {f}
-          </div>
-        ))}
-      </div>
-
-      {/* Suggestion grid */}
       <div style={{
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
-        gap: 8,
-        maxWidth: 480,
+        gap: 10,
+        maxWidth: 520,
         width: "100%",
-        marginTop: 4,
       }}>
         {suggestions.map((q) => (
-          <div
+          <button
             key={q}
+            onClick={() => onSuggest(q)}
             style={{
-              padding: "12px 14px",
-              borderRadius: "var(--radius)",
-              background: "var(--surface-2)",
+              padding: "14px 16px",
+              borderRadius: "var(--radius-lg)",
+              background: "var(--surface)",
               border: "1px solid var(--border)",
               fontFamily: "var(--sans)",
-              fontSize: "0.8rem",
+              fontSize: "0.85rem",
               color: "var(--text-secondary)",
-              cursor: "default",
+              cursor: "pointer",
               lineHeight: 1.4,
-              transition: `border-color var(--transition)`,
+              textAlign: "left",
+              transition: "all var(--transition)",
             }}
-            onMouseEnter={(e) => e.currentTarget.style.borderColor = "var(--accent)"}
-            onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border)"}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = "rgba(74,222,128,0.3)";
+              e.currentTarget.style.color = "var(--text)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = "var(--border)";
+              e.currentTarget.style.color = "var(--text-secondary)";
+            }}
           >
             {q}
-          </div>
+          </button>
         ))}
       </div>
     </div>
@@ -404,44 +356,41 @@ function EmptyState() {
 function TypingIndicator() {
   return (
     <div style={{
-      padding: "12px 24px",
+      padding: "12px 28px",
       display: "flex",
-      gap: 12,
+      gap: 14,
       alignItems: "center",
       maxWidth: 760,
       margin: "0 auto",
       width: "100%",
     }}>
       <div style={{
-        width: 32,
-        height: 32,
-        borderRadius: "var(--radius)",
-        background: "var(--surface-2)",
-        border: "1px solid var(--border)",
+        width: 34,
+        height: 34,
+        borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(74,222,128,0.1) 0%, transparent 70%)",
+        border: "1px solid rgba(74,222,128,0.2)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         flexShrink: 0,
       }}>
-        <img
-          src="/favicon_32.png"
-          alt="agent"
-          style={{
-            width: 16,
-            height: 16,
-            objectFit: "contain",
-            filter: "invert(1) brightness(0.7) sepia(1) saturate(5) hue-rotate(95deg)",
-          }}
-        />
+        <div style={{
+          width: 10,
+          height: 10,
+          borderRadius: "50%",
+          background: "var(--accent)",
+          boxShadow: "0 0 6px var(--accent)",
+        }} />
       </div>
-      <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+      <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
         {[0, 1, 2].map((i) => (
           <div key={i} style={{
             width: 5,
             height: 5,
             borderRadius: "50%",
             background: "var(--accent)",
-            animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite`,
+            animation: `pulse 1.4s ease-in-out ${i * 0.2}s infinite`,
           }} />
         ))}
       </div>

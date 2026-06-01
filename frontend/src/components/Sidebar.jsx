@@ -4,15 +4,7 @@ import FileUpload from "./FileUpload";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
-export default function Sidebar({
-  status,
-  setStatus,
-  chats,
-  activeChatId,
-  onSelectChat,
-  onNewChat,
-  onDeleteChat,
-}) {
+export default function Sidebar({ status, setStatus, chats, activeChatId, onSelectChat, onNewChat, onDeleteChat }) {
   const [showUpload, setShowUpload] = useState(false);
   const [search, setSearch] = useState("");
   const [collapsed, setCollapsed] = useState(false);
@@ -25,7 +17,6 @@ export default function Sidebar({
   }, []);
 
   const allOk = status?.llm_reachable && status?.vector_store_reachable;
-
   const filteredChats = chats.filter((c) =>
     c.title.toLowerCase().includes(search.toLowerCase())
   );
@@ -42,7 +33,6 @@ export default function Sidebar({
         alignItems: "center",
         padding: "16px 0",
         gap: 16,
-        transition: "width var(--transition)",
       }}>
         <button
           onClick={() => setCollapsed(false)}
@@ -50,19 +40,15 @@ export default function Sidebar({
             background: "transparent",
             border: "none",
             cursor: "pointer",
-            color: "var(--text-muted)",
             padding: 8,
             borderRadius: "var(--radius)",
-            transition: "color var(--transition)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
           }}
-          onMouseEnter={(e) => e.currentTarget.style.color = "var(--accent)"}
-          onMouseLeave={(e) => e.currentTarget.style.color = "var(--text-muted)"}
         >
           <img
-            src="/favicon_64.png"
+            src="/favicon_32.png"
             alt="RAG"
             style={{
               width: 22,
@@ -105,9 +91,7 @@ export default function Sidebar({
       flexDirection: "column",
       height: "100vh",
       overflow: "hidden",
-      transition: "width var(--transition)",
     }}>
-
       {/* Header */}
       <div style={{
         padding: "20px 16px 14px",
@@ -118,16 +102,13 @@ export default function Sidebar({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          marginBottom: 14,
+          marginBottom: 16,
         }}>
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-          }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {/* Favicon logo */}
             <div style={{
-              width: 34,
-              height: 34,
+              width: 36,
+              height: 36,
               borderRadius: "var(--radius)",
               background: "var(--surface-2)",
               border: "1px solid var(--border)",
@@ -137,7 +118,7 @@ export default function Sidebar({
               flexShrink: 0,
             }}>
               <img
-                src="/favicon_64.png"
+                src="/favicon_32.png"
                 alt="RAG Agent"
                 style={{
                   width: 20,
@@ -159,17 +140,17 @@ export default function Sidebar({
               </div>
               <div style={{
                 fontFamily: "var(--mono)",
-                fontSize: "0.65rem",
+                fontSize: "0.6rem",
                 color: "var(--accent)",
-                letterSpacing: "0.08em",
+                letterSpacing: "0.1em",
                 textTransform: "uppercase",
+                opacity: 0.7,
               }}>
                 RAG AGENT
               </div>
             </div>
           </div>
 
-          {/* Collapse button */}
           <button
             onClick={() => setCollapsed(true)}
             style={{
@@ -200,15 +181,13 @@ export default function Sidebar({
           style={{
             width: "100%",
             background: "transparent",
-            border: "1px solid var(--accent)",
-            borderRadius: "var(--radius)",
-            padding: "8px 14px",
+            border: "1px solid rgba(74,222,128,0.3)",
+            borderRadius: "var(--radius-lg)",
+            padding: "9px 14px",
             color: "var(--accent)",
             fontFamily: "var(--sans)",
             fontWeight: 500,
-            fontSize: "0.75rem",
-            letterSpacing: "0.05em",
-            textTransform: "uppercase",
+            fontSize: "0.82rem",
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
@@ -216,17 +195,25 @@ export default function Sidebar({
             gap: 8,
             transition: "all var(--transition)",
           }}
-          onMouseEnter={(e) => e.currentTarget.style.background = "var(--accent-dim)"}
-          onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "var(--accent-dim)";
+            e.currentTarget.style.borderColor = "rgba(74,222,128,0.5)";
+            e.currentTarget.style.boxShadow = "0 0 12px rgba(74,222,128,0.08)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "transparent";
+            e.currentTarget.style.borderColor = "rgba(74,222,128,0.3)";
+            e.currentTarget.style.boxShadow = "none";
+          }}
         >
-          <Plus size={13} />
-          New Chat
+          <Plus size={14} />
+          New chat
         </button>
       </div>
 
       {/* Search */}
       <div style={{
-        padding: "12px 16px",
+        padding: "10px 14px",
         borderBottom: "1px solid var(--border-subtle)",
         flexShrink: 0,
       }}>
@@ -237,18 +224,18 @@ export default function Sidebar({
             gap: 8,
             background: "var(--surface-2)",
             border: "1px solid var(--border)",
-            borderRadius: "var(--radius)",
-            padding: "6px 10px",
+            borderRadius: "var(--radius-lg)",
+            padding: "7px 12px",
             transition: "border-color var(--transition)",
           }}
-          onFocusCapture={(e) => e.currentTarget.style.borderColor = "var(--accent)"}
+          onFocusCapture={(e) => e.currentTarget.style.borderColor = "rgba(74,222,128,0.3)"}
           onBlurCapture={(e) => e.currentTarget.style.borderColor = "var(--border)"}
         >
           <Search size={12} color="var(--text-muted)" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search conversations..."
+            placeholder="Search chats"
             style={{
               flex: 1,
               background: "transparent",
@@ -256,34 +243,29 @@ export default function Sidebar({
               outline: "none",
               color: "var(--text)",
               fontFamily: "var(--sans)",
-              fontSize: "0.75rem",
+              fontSize: "0.8rem",
             }}
           />
         </div>
       </div>
 
       {/* Chat list */}
-      <div style={{
-        flex: 1,
-        overflowY: "auto",
-        padding: "8px",
-      }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "6px 8px" }}>
         {filteredChats.length > 0 && (
           <div style={{
             fontFamily: "var(--mono)",
-            fontSize: "0.65rem",
+            fontSize: "0.6rem",
             color: "var(--text-muted)",
-            letterSpacing: "0.05em",
+            letterSpacing: "0.08em",
             textTransform: "uppercase",
-            padding: "4px 8px 8px",
+            padding: "6px 8px 6px",
           }}>
-            Recent
+            Recents
           </div>
         )}
-
         {filteredChats.length === 0 ? (
           <div style={{
-            padding: "16px 8px",
+            padding: "20px 8px",
             fontFamily: "var(--mono)",
             fontSize: "0.75rem",
             color: "var(--text-muted)",
@@ -307,23 +289,22 @@ export default function Sidebar({
       {/* Footer */}
       <div style={{
         borderTop: "1px solid var(--border)",
-        padding: "12px 16px",
+        padding: "12px 14px",
         flexShrink: 0,
         display: "flex",
         flexDirection: "column",
         gap: 10,
       }}>
-        {/* Upload toggle */}
         <button
           onClick={() => setShowUpload((v) => !v)}
           style={{
             background: showUpload ? "var(--accent-dim)" : "transparent",
-            border: `1px solid ${showUpload ? "var(--accent)" : "var(--border)"}`,
-            borderRadius: "var(--radius)",
-            padding: "7px 12px",
+            border: `1px solid ${showUpload ? "rgba(74,222,128,0.3)" : "var(--border)"}`,
+            borderRadius: "var(--radius-lg)",
+            padding: "8px 12px",
             color: showUpload ? "var(--accent)" : "var(--text-muted)",
             fontFamily: "var(--sans)",
-            fontSize: "0.75rem",
+            fontSize: "0.8rem",
             fontWeight: 500,
             cursor: "pointer",
             display: "flex",
@@ -334,7 +315,7 @@ export default function Sidebar({
           }}
           onMouseEnter={(e) => {
             if (!showUpload) {
-              e.currentTarget.style.borderColor = "var(--accent)";
+              e.currentTarget.style.borderColor = "rgba(74,222,128,0.3)";
               e.currentTarget.style.color = "var(--accent)";
             }
           }}
@@ -355,21 +336,18 @@ export default function Sidebar({
           </div>
         )}
 
-        {/* Footer status */}
+        {/* Status row */}
         <div style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "4px 2px 0",
+          padding: "2px 2px 0",
         }}>
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-          }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {/* Favicon status icon */}
             <div style={{
-              width: 28,
-              height: 28,
+              width: 30,
+              height: 30,
               borderRadius: "var(--radius)",
               background: "var(--surface-2)",
               border: "1px solid var(--border)",
@@ -389,12 +367,7 @@ export default function Sidebar({
               />
             </div>
             <div>
-              <div style={{
-                fontSize: "0.75rem",
-                fontWeight: 500,
-                color: "var(--text)",
-                lineHeight: 1.2,
-              }}>
+              <div style={{ fontSize: "0.8rem", fontWeight: 500, color: "var(--text)", lineHeight: 1.2 }}>
                 RAG Agent
               </div>
               <div style={{
@@ -407,10 +380,11 @@ export default function Sidebar({
                   height: 5,
                   borderRadius: "50%",
                   background: allOk ? "var(--accent)" : "var(--red)",
+                  boxShadow: allOk ? "0 0 4px var(--accent)" : "0 0 4px var(--red)",
                 }} />
                 <span style={{
                   fontFamily: "var(--mono)",
-                  fontSize: "0.65rem",
+                  fontSize: "0.62rem",
                   color: "var(--text-muted)",
                 }}>
                   {allOk ? "connected" : "disconnected"}
@@ -454,9 +428,9 @@ function ChatItem({ chat, active, onSelect, onDelete }) {
         alignItems: "center",
         gap: 8,
         padding: "9px 10px",
-        borderRadius: "var(--radius)",
+        borderRadius: "var(--radius-lg)",
         background: active ? "var(--accent-dim)" : hovered ? "var(--surface-2)" : "transparent",
-        borderLeft: active ? "2px solid var(--accent)" : "2px solid transparent",
+        border: `1px solid ${active ? "rgba(74,222,128,0.2)" : "transparent"}`,
         cursor: "pointer",
         transition: "all var(--transition)",
         marginBottom: 2,
@@ -469,7 +443,7 @@ function ChatItem({ chat, active, onSelect, onDelete }) {
       />
       <div style={{ flex: 1, overflow: "hidden" }}>
         <div style={{
-          fontSize: "0.8rem",
+          fontSize: "0.82rem",
           fontWeight: active ? 500 : 400,
           color: active ? "var(--text)" : "var(--text-secondary)",
           whiteSpace: "nowrap",
@@ -480,7 +454,7 @@ function ChatItem({ chat, active, onSelect, onDelete }) {
           {chat.title}
         </div>
         <div style={{
-          fontSize: "0.65rem",
+          fontSize: "0.62rem",
           color: "var(--text-muted)",
           fontFamily: "var(--mono)",
           marginTop: 1,
@@ -490,26 +464,25 @@ function ChatItem({ chat, active, onSelect, onDelete }) {
       </div>
 
       {hovered && (
-        <div style={{ display: "flex", gap: 2, flexShrink: 0 }}>
-          <button
-            onClick={(e) => { e.stopPropagation(); onDelete(chat.id); }}
-            style={{
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              padding: 4,
-              color: "var(--text-muted)",
-              borderRadius: 4,
-              display: "flex",
-              alignItems: "center",
-              transition: "color var(--transition)",
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.color = "var(--red)"}
-            onMouseLeave={(e) => e.currentTarget.style.color = "var(--text-muted)"}
-          >
-            <Trash2 size={11} />
-          </button>
-        </div>
+        <button
+          onClick={(e) => { e.stopPropagation(); onDelete(chat.id); }}
+          style={{
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            padding: 4,
+            color: "var(--text-muted)",
+            borderRadius: 4,
+            display: "flex",
+            alignItems: "center",
+            transition: "color var(--transition)",
+            flexShrink: 0,
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.color = "var(--red)"}
+          onMouseLeave={(e) => e.currentTarget.style.color = "var(--text-muted)"}
+        >
+          <Trash2 size={11} />
+        </button>
       )}
     </div>
   );

@@ -17,7 +17,7 @@ export default function Message({ message }) {
   if (isUser) {
     return (
       <div className="animate-fade-slide" style={{
-        padding: "8px 24px",
+        padding: "6px 28px",
         display: "flex",
         justifyContent: "flex-end",
         maxWidth: 760,
@@ -25,13 +25,13 @@ export default function Message({ message }) {
         width: "100%",
       }}>
         <div style={{
-          background: "rgba(107,165,132,0.08)",
-          border: "1px solid rgba(107,165,132,0.25)",
-          borderRadius: "12px 12px 4px 12px",
-          padding: "10px 16px",
+          background: "var(--surface-2)",
+          border: "1px solid var(--border)",
+          borderRadius: "18px 18px 4px 18px",
+          padding: "11px 18px",
           maxWidth: "72%",
-          fontSize: "0.9375rem",
-          lineHeight: 1.6,
+          fontSize: "0.9rem",
+          lineHeight: 1.65,
           fontFamily: "var(--sans)",
           color: "var(--text)",
           whiteSpace: "pre-wrap",
@@ -46,7 +46,7 @@ export default function Message({ message }) {
   if (isError) {
     return (
       <div className="animate-fade-slide" style={{
-        padding: "8px 24px",
+        padding: "6px 28px",
         maxWidth: 760,
         margin: "0 auto",
         width: "100%",
@@ -56,11 +56,11 @@ export default function Message({ message }) {
           alignItems: "center",
           gap: 8,
           background: "var(--red-dim)",
-          border: "1px solid var(--red)",
-          borderRadius: "var(--radius)",
+          border: "1px solid rgba(248,113,113,0.2)",
+          borderRadius: "var(--radius-lg)",
           padding: "10px 14px",
           color: "var(--red)",
-          fontSize: "0.75rem",
+          fontSize: "0.8rem",
           fontFamily: "var(--mono)",
         }}>
           <AlertCircle size={13} />
@@ -76,37 +76,36 @@ export default function Message({ message }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        padding: "8px 24px",
+        padding: "6px 28px",
         display: "flex",
-        gap: 12,
+        gap: 14,
         alignItems: "flex-start",
         maxWidth: 760,
         margin: "0 auto",
         width: "100%",
       }}
     >
-      {/* Avatar */}
+      {/* Avatar orb */}
       <div style={{
-        width: 32,
-        height: 32,
-        borderRadius: "var(--radius)",
-        background: "var(--surface-2)",
-        border: "1px solid var(--border)",
+        width: 34,
+        height: 34,
+        borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(74,222,128,0.12) 0%, transparent 70%)",
+        border: "1px solid rgba(74,222,128,0.2)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         flexShrink: 0,
-        marginTop: 3,
+        marginTop: 2,
+        boxShadow: "0 0 10px rgba(74,222,128,0.08)",
       }}>
-        <img
-          src="/favicon_32.png"
-          alt="agent"
-          style={{
-            width: 16,
-            height: 16,
-            objectFit: "contain",
-            filter: "invert(1) brightness(0.7) sepia(1) saturate(5) hue-rotate(95deg)",          }}
-        />
+        <div style={{
+          width: 10,
+          height: 10,
+          borderRadius: "50%",
+          background: "var(--accent)",
+          boxShadow: "0 0 6px var(--accent)",
+        }} />
       </div>
 
       <div style={{
@@ -118,63 +117,36 @@ export default function Message({ message }) {
       }}>
         {/* Answer */}
         <div style={{
-          fontSize: "0.9375rem",
-          lineHeight: 1.7,
+          fontSize: "0.9rem",
+          lineHeight: 1.75,
           color: "var(--text)",
           fontFamily: "var(--sans)",
           whiteSpace: "pre-wrap",
           wordBreak: "break-word",
-          background: "var(--surface)",
-          border: "1px solid var(--border)",
-          borderRadius: "4px 12px 12px 12px",
-          padding: "12px 16px",
         }}>
           {message.text}
         </div>
 
-        {/* Action buttons — visible on hover */}
+        {/* Action buttons */}
         <div style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           opacity: hovered ? 1 : 0,
-          transition: `opacity var(--transition)`,
+          transition: "opacity var(--transition)",
         }}>
           <div style={{ display: "flex", gap: 4 }}>
-            <ActionButton
-              icon={<Copy size={12} />}
-              label={copied ? "Copied!" : "Copy"}
-              onClick={copyText}
-              active={copied}
-            />
-            <ActionButton
-              icon={<ThumbsUp size={12} />}
-              label="Good"
-            />
-            <ActionButton
-              icon={<ThumbsDown size={12} />}
-              label="Bad"
-            />
+            <ActionButton icon={<Copy size={11} />} label={copied ? "Copied!" : "Copy"} onClick={copyText} active={copied} />
+            <ActionButton icon={<ThumbsUp size={11} />} label="Good" />
+            <ActionButton icon={<ThumbsDown size={11} />} label="Bad" />
           </div>
 
-          {/* Badges */}
           <div style={{ display: "flex", gap: 6 }}>
             {message.webSearchUsed && (
-              <Badge
-                icon={<Globe size={10} />}
-                label="Web search"
-                color="var(--accent)"
-                bg="var(--accent-dim)"
-                border="rgba(107,165,132,0.2)"
-              />
+              <Badge icon={<Globe size={9} />} label="Web search" color="var(--accent)" bg="var(--accent-dim)" border="rgba(74,222,128,0.15)" />
             )}
             {message.retries > 0 && (
-              <Badge
-                label={`${message.retries} retr${message.retries === 1 ? "y" : "ies"}`}
-                color="var(--text-muted)"
-                bg="var(--surface-2)"
-                border="var(--border)"
-              />
+              <Badge label={`${message.retries} retr${message.retries === 1 ? "y" : "ies"}`} color="var(--text-muted)" bg="var(--surface-2)" border="var(--border)" />
             )}
           </div>
         </div>
@@ -183,51 +155,41 @@ export default function Message({ message }) {
         {message.sources?.length > 0 && (
           <div style={{
             border: "1px solid var(--border)",
-            borderRadius: "var(--radius)",
+            borderRadius: "var(--radius-lg)",
             overflow: "hidden",
           }}>
             <button
               onClick={() => setSourcesOpen((o) => !o)}
               style={{
                 width: "100%",
-                background: "var(--surface-2)",
+                background: "var(--surface)",
                 border: "none",
-                padding: "7px 12px",
+                padding: "8px 14px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
                 cursor: "pointer",
                 color: "var(--text-muted)",
                 fontFamily: "var(--mono)",
-                fontSize: "0.65rem",
+                fontSize: "0.62rem",
                 letterSpacing: "0.06em",
                 textTransform: "uppercase",
-                transition: `background var(--transition)`,
+                transition: "background var(--transition)",
               }}
-              onMouseEnter={(e) =>
-                e.currentTarget.style.background = "var(--surface-3)"
-              }
-              onMouseLeave={(e) =>
-                e.currentTarget.style.background = "var(--surface-2)"
-              }
+              onMouseEnter={(e) => e.currentTarget.style.background = "var(--surface-2)"}
+              onMouseLeave={(e) => e.currentTarget.style.background = "var(--surface)"}
             >
-              <span style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-              }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <div style={{
                   width: 5,
                   height: 5,
                   borderRadius: "50%",
                   background: "var(--accent)",
+                  boxShadow: "0 0 4px var(--accent)",
                 }} />
                 {message.sources.length} Source{message.sources.length !== 1 ? "s" : ""}
               </span>
-              {sourcesOpen
-                ? <ChevronUp size={11} />
-                : <ChevronDown size={11} />
-              }
+              {sourcesOpen ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
             </button>
 
             {sourcesOpen && (
@@ -248,18 +210,11 @@ export default function Message({ message }) {
                     whiteSpace: "pre-wrap",
                     wordBreak: "break-word",
                   }}>
-                    <span style={{
-                      color: "var(--accent)",
-                      marginRight: 8,
-                      fontSize: "0.65rem",
-                      opacity: 0.8,
-                    }}>
+                    <span style={{ color: "var(--accent)", marginRight: 8, fontSize: "0.62rem" }}>
                       [{i + 1}]
                     </span>
                     {src.content.slice(0, 300)}
-                    {src.content.length > 300 && (
-                      <span style={{ color: "var(--text-muted)" }}>…</span>
-                    )}
+                    {src.content.length > 300 && <span style={{ color: "var(--text-muted)" }}>…</span>}
                   </div>
                 ))}
               </div>
@@ -277,17 +232,17 @@ function ActionButton({ icon, label, onClick, active }) {
       onClick={onClick}
       style={{
         background: active ? "var(--accent-dim)" : "transparent",
-        border: `1px solid ${active ? "var(--accent)" : "transparent"}`,
+        border: `1px solid ${active ? "rgba(74,222,128,0.3)" : "transparent"}`,
         borderRadius: "var(--radius)",
         padding: "3px 8px",
         color: active ? "var(--accent)" : "var(--text-muted)",
         fontFamily: "var(--mono)",
-        fontSize: "0.65rem",
+        fontSize: "0.62rem",
         cursor: "pointer",
         display: "flex",
         alignItems: "center",
         gap: 4,
-        transition: `all var(--transition)`,
+        transition: "all var(--transition)",
       }}
       onMouseEnter={(e) => {
         if (!active) {
@@ -320,7 +275,7 @@ function Badge({ icon, label, color, bg, border }) {
       color: color,
       border: `1px solid ${border}`,
       fontFamily: "var(--mono)",
-      fontSize: "0.65rem",
+      fontSize: "0.62rem",
       letterSpacing: "0.04em",
     }}>
       {icon}
