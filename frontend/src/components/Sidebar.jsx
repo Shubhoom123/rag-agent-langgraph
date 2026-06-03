@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { Upload, Plus, Trash2, MessageSquare, Search, Settings } from "lucide-react";
+import { Upload, Plus, Trash2, MessageSquare, Search, LogOut } from "lucide-react";
 import FileUpload from "./FileUpload";
+import { logOut } from "../firebase";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
-export default function Sidebar({ status, setStatus, chats, activeChatId, onSelectChat, onNewChat, onDeleteChat }) {
+export default function Sidebar({ user, status, setStatus, chats, activeChatId, onSelectChat, onNewChat, onDeleteChat }) {
   const [showUpload, setShowUpload] = useState(false);
   const [search, setSearch] = useState("");
   const [collapsed, setCollapsed] = useState(false);
@@ -105,7 +106,6 @@ export default function Sidebar({ status, setStatus, chats, activeChatId, onSele
           marginBottom: 16,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {/* Favicon logo */}
             <div style={{
               width: 36,
               height: 36,
@@ -175,7 +175,6 @@ export default function Sidebar({ status, setStatus, chats, activeChatId, onSele
           </button>
         </div>
 
-        {/* New Chat */}
         <button
           onClick={onNewChat}
           style={{
@@ -336,39 +335,56 @@ export default function Sidebar({ status, setStatus, chats, activeChatId, onSele
           </div>
         )}
 
-        {/* Status row */}
+        {/* User row */}
         <div style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "2px 2px 0",
+          padding: "4px 2px 0",
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            {/* Favicon status icon */}
-            <div style={{
-              width: 30,
-              height: 30,
-              borderRadius: "var(--radius)",
-              background: "var(--surface-2)",
-              border: "1px solid var(--border)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, overflow: "hidden" }}>
+            {/* User avatar */}
+            {user?.photoURL ? (
               <img
-                src="/favicon_32.png"
-                alt="status"
+                src={user.photoURL}
+                alt={user.displayName}
                 style={{
-                  width: 16,
-                  height: 16,
-                  objectFit: "contain",
-                  filter: "invert(1) brightness(0.7) sepia(1) saturate(5) hue-rotate(95deg)",
+                  width: 30,
+                  height: 30,
+                  borderRadius: "50%",
+                  border: "1px solid var(--border)",
+                  flexShrink: 0,
                 }}
               />
-            </div>
-            <div>
-              <div style={{ fontSize: "0.8rem", fontWeight: 500, color: "var(--text)", lineHeight: 1.2 }}>
-                RAG Agent
+            ) : (
+              <div style={{
+                width: 30,
+                height: 30,
+                borderRadius: "50%",
+                background: "var(--accent-dim)",
+                border: "1px solid rgba(74,222,128,0.3)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+                fontSize: "0.75rem",
+                fontWeight: 600,
+                color: "var(--accent)",
+              }}>
+                {user?.displayName?.[0] || user?.email?.[0] || "U"}
+              </div>
+            )}
+            <div style={{ overflow: "hidden" }}>
+              <div style={{
+                fontSize: "0.8rem",
+                fontWeight: 500,
+                color: "var(--text)",
+                lineHeight: 1.2,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}>
+                {user?.displayName || "User"}
               </div>
               <div style={{
                 display: "flex",
@@ -381,33 +397,42 @@ export default function Sidebar({ status, setStatus, chats, activeChatId, onSele
                   borderRadius: "50%",
                   background: allOk ? "var(--accent)" : "var(--red)",
                   boxShadow: allOk ? "0 0 4px var(--accent)" : "0 0 4px var(--red)",
+                  flexShrink: 0,
                 }} />
                 <span style={{
                   fontFamily: "var(--mono)",
                   fontSize: "0.62rem",
                   color: "var(--text-muted)",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
                 }}>
                   {allOk ? "connected" : "disconnected"}
                 </span>
               </div>
             </div>
           </div>
+
+          {/* Sign out button */}
           <button
+            onClick={logOut}
+            title="Sign out"
             style={{
               background: "transparent",
               border: "none",
               cursor: "pointer",
               color: "var(--text-muted)",
-              padding: 4,
+              padding: 6,
               borderRadius: "var(--radius)",
               display: "flex",
               alignItems: "center",
               transition: "color var(--transition)",
+              flexShrink: 0,
             }}
-            onMouseEnter={(e) => e.currentTarget.style.color = "var(--accent)"}
+            onMouseEnter={(e) => e.currentTarget.style.color = "var(--red)"}
             onMouseLeave={(e) => e.currentTarget.style.color = "var(--text-muted)"}
           >
-            <Settings size={14} />
+            <LogOut size={14} />
           </button>
         </div>
       </div>

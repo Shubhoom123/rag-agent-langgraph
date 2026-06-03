@@ -68,6 +68,9 @@ html, body, #root {
   0%, 100% { box-shadow: 0 0 40px 10px rgba(74,222,128,0.1), 0 0 80px 20px rgba(74,222,128,0.05); }
   50%       { box-shadow: 0 0 60px 20px rgba(74,222,128,0.18), 0 0 120px 40px rgba(74,222,128,0.08); }
 }
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 
 .animate-fade-slide {
   animation: fadeSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
