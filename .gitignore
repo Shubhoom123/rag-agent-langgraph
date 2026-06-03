@@ -23,4 +23,4 @@ frontend/.env.production
 # IDE
 .DS_Store
 .vscode/
-.idea/
+.idea/.history/
