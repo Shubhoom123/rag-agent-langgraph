@@ -2,7 +2,7 @@
 
 A production-grade self-correcting RAG system built with LangGraph, FastAPI, and React. The agent retrieves documents from a vector store, grades their relevance, and falls back to live web search when needed.
 
-**Live Demo:** [rag-agent-langgraph.vercel.app](https://rag-agent-langgraph.vercel.app)
+**Link:** [rag-agent-langgraph.vercel.app](https://rag-agent-langgraph.vercel.app)
 
 ---
 
@@ -10,10 +10,10 @@ A production-grade self-correcting RAG system built with LangGraph, FastAPI, and
 
 | Layer | Technology |
 |---|---|
-| Frontend | React + Vite, deployed on Vercel |
-| Backend | FastAPI (Python), deployed on Railway |
-| LLM | Groq (llama-3.1-8b-instant) / Ollama (local) |
-| Vector DB | Pinecone (production) / ChromaDB (local) |
+| Frontend | React + Vite on Vercel |
+| Backend | Python on Railway |
+| LLM | Groq (llama-3.1-8b-instant) |
+| Vector DB | Pinecone (prod) / ChromaDB (dev) |
 | Embeddings | sentence-transformers/all-MiniLM-L6-v2 |
 | Agent Framework | LangGraph + LangChain |
 | Web Search | Wikipedia API + DuckDuckGo |
@@ -22,12 +22,12 @@ A production-grade self-correcting RAG system built with LangGraph, FastAPI, and
 
 ## How It Works
 
-The agent runs as a stateful LangGraph pipeline:
+The agent runs as a LangGraph pipeline:
 
 1. **Rewrite Query** — rewrites long questions into keyword search queries (skips for short ones)
-2. **Retrieve** — similarity search in Pinecone
+2. **Retrieve** — similarity search in Pinecone with existing ingested documents
 3. **Grade Documents** — LLM scores relevance of retrieved docs
-4. **Web Search** (if needed) — fetches Wikipedia + DuckDuckGo results into state only, never stored in Pinecone
+4. **Web Search** (if needed) — fetches Wikipedia + DuckDuckGo results into state only, not stored in Pinecone
 5. **Generate** — answers using context and full conversation history
 
 ---
