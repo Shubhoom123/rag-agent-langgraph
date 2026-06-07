@@ -5,7 +5,7 @@ import Sidebar from "./components/Sidebar";
 import ChatWindow from "./components/ChatWindow";
 import LoginPage from "./components/LoginPage";
 import "./index.css";
-import { saveChat } from "./firebase";
+import { saveChat, loadChats, deleteChat as deleteChatFromFirestore } from "./firebase";
 
 function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2);
@@ -23,10 +23,26 @@ export default function App() {
   const [status, setStatus] = useState(null);
   const [mounted, setMounted] = useState(false);
 
-  // Listen to Firebase auth state
+  // Listen to Firebase auth state and load chats on login
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
+      if (firebaseUser) {
+        try {
+          const saved = await loadChats(firebaseUser.uid);
+          if (saved.length > 0) {
+            setChats(saved);
+            setActiveChatId(saved[0].id);
+          }
+        } catch (err) {
+          console.error("Failed to load chats:", err);
+        }
+      } else {
+        // Reset on logout
+        const fresh = createChat();
+        setChats([fresh]);
+        setActiveChatId(fresh.id);
+      }
       setAuthLoading(false);
     });
     return () => unsubscribe();
@@ -69,6 +85,10 @@ export default function App() {
   }
 
   function deleteChat(id) {
+    // Delete from Firestore
+    if (user?.uid) {
+      deleteChatFromFirestore(user.uid, id).catch(console.error);
+    }
     setChats((prev) => {
       const next = prev.filter((c) => c.id !== id);
       if (next.length === 0) {
