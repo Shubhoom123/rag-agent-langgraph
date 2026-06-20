@@ -14,16 +14,10 @@ langchain-core
 langchain-text-splitters
 
 # LLM providers
-langchain-ollama
 langchain-groq
 
-# Embeddings
-langchain-huggingface
-sentence-transformers
-
 # Vector stores
-langchain-chroma
-chromadb
+pinecone
 
 # Web search
 tavily-python
@@ -31,14 +25,11 @@ tavily-python
 # PDF support
 pypdf
 
-# HTTP client for health checks
+# HTTP client
 httpx
 
 # Rate limiting
 slowapi
-
-# Pinecone
-pinecone
 
 # Firebase
 firebase-admin
