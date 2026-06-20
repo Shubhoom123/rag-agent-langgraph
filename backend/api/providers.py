@@ -1,8 +1,6 @@
 """
 Provider factory.
 Returns the correct LLM and vector store based on settings.
-Swapping from Ollama → Groq or Chroma → Pinecone
-is a single env var change — no code changes needed.
 """
 import logging
 from functools import lru_cache
@@ -12,16 +10,13 @@ from api.config import settings
 
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# LLM
-# ---------------------------------------------------------------------------
+@lru_cache(maxsize=1)
 def get_llm() -> BaseLanguageModel:
-    """Return LLM based on LLM_PROVIDER env var."""
+    """Cached LLM — initialized once, reused across requests."""
     if settings.llm_provider == "groq":
         if not settings.groq_api_key:
             raise EnvironmentError(
-                "LLM_PROVIDER=groq but GROQ_API_KEY is not set. "
-                "Add it to your .env file."
+                "LLM_PROVIDER=groq but GROQ_API_KEY is not set."
             )
         from langchain_groq import ChatGroq
         logger.info(f"Using Groq — model: {settings.groq_model}")
@@ -31,7 +26,6 @@ def get_llm() -> BaseLanguageModel:
             temperature=0,
         )
 
-    # Default: Ollama (local)
     from langchain_ollama import OllamaLLM
     logger.info(f"Using Ollama — model: {settings.ollama_model}")
     return OllamaLLM(
@@ -39,9 +33,6 @@ def get_llm() -> BaseLanguageModel:
         base_url=settings.ollama_base_url,
     )
 
-# ---------------------------------------------------------------------------
-# Embeddings
-# ---------------------------------------------------------------------------
 @lru_cache
 def get_embeddings():
     """Cached embeddings — expensive to load, reuse across requests."""
@@ -49,15 +40,7 @@ def get_embeddings():
     logger.info(f"Loading embeddings: {settings.embedding_model}")
     return HuggingFaceEmbeddings(model_name=settings.embedding_model)
 
-# ---------------------------------------------------------------------------
-# Pinecone vector store — native client, no langchain-pinecone needed
-# ---------------------------------------------------------------------------
 class PineconeVectorStoreWrapper(VectorStore):
-    """
-    Minimal VectorStore wrapper around the native Pinecone client.
-    Avoids langchain-pinecone which doesn't support Python 3.14.
-    """
-
     def __init__(self, index, embeddings, text_key="text"):
         self._index = index
         self._embeddings = embeddings
@@ -75,7 +58,6 @@ class PineconeVectorStoreWrapper(VectorStore):
         return docs
 
     def add_documents(self, documents, **kwargs):
-        from langchain_core.documents import Document
         import uuid
         texts = [d.page_content for d in documents]
         vectors = self._embeddings.embed_documents(texts)
@@ -98,11 +80,9 @@ class PineconeVectorStoreWrapper(VectorStore):
     def from_texts(cls, texts, embedding, metadatas=None, **kwargs):
         raise NotImplementedError("Use add_documents instead.")
 
-# ---------------------------------------------------------------------------
-# Vector Store
-# ---------------------------------------------------------------------------
+@lru_cache(maxsize=1)
 def get_vectorstore() -> VectorStore:
-    """Return vector store based on VECTOR_STORE_PROVIDER env var."""
+    """Cached vector store — initialized once, reused across requests."""
     embeddings = get_embeddings()
 
     if settings.vector_store_provider == "pinecone":
@@ -127,7 +107,6 @@ def get_vectorstore() -> VectorStore:
         logger.info(f"Using Pinecone index: {settings.pinecone_index_name}")
         return PineconeVectorStoreWrapper(index=index, embeddings=embeddings)
 
-    # Default: Chroma (local)
     from langchain_chroma import Chroma
     logger.info(f"Using Chroma at: {settings.chroma_persist_dir}")
     return Chroma(

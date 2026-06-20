@@ -42,8 +42,24 @@ async def lifespan(app: FastAPI):
     logger.info(f"Auth required     : {settings.require_auth}")
     logger.info(f"API key required  : {settings.require_api_key}")
     logger.info(f"Security logging  : {settings.log_security_events}")
+    
+    # Warm up — initialize cached objects at startup
+    try:
+        from api.providers import get_llm, get_vectorstore
+        from api.routes.query import _get_cached_agent
+        logger.info("Warming up LLM...")
+        get_llm()
+        logger.info("Warming up vector store...")
+        get_vectorstore()
+        logger.info("Warming up agent...")
+        _get_cached_agent()
+        logger.info("Warmup complete.")
+    except Exception as e:
+        logger.warning(f"Warmup failed (non-fatal): {e}")
+    
     yield
     logger.info("Shutting down RAG Agent API...")
+
 
 
 # ---------------------------------------------------------------------------
