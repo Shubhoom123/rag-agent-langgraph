@@ -1,10 +1,10 @@
 """
 Firebase Auth middleware.
 
-Verifies the Firebase ID token sent in the Authorization header.
+Verifies the Firebase ID token sent in the Auth header.
 Set REQUIRE_AUTH=false in your .env to skip verification locally.
 
-How it works in production:
+For production:
   1. User signs in with Google SSO on the frontend (Firebase SDK)
   2. Frontend gets an ID token from Firebase
   3. Frontend sends: Authorization: Bearer <id_token>
@@ -50,15 +50,11 @@ async def get_current_user(
     Returns local-dev user if REQUIRE_AUTH=false.
     Raises 401 if token is missing or invalid in production.
     """
-    # ------------------------------------------------------------------
-    # Local dev — skip auth entirely
-    # ------------------------------------------------------------------
+    # For Loc dev — skip auth entirely
     if not settings.require_auth:
         return AuthenticatedUser(uid="local-dev", email=None, name="Local Dev")
 
-    # ------------------------------------------------------------------
-    # Production — verify Firebase ID token
-    # ------------------------------------------------------------------
+    # For Prod — verifies Firebase ID token
     if not credentials:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -72,7 +68,6 @@ async def get_current_user(
         import firebase_admin
         from firebase_admin import auth as firebase_auth, credentials as fb_creds
 
-        # Initialize Firebase app once (idempotent)
         if not firebase_admin._apps:
             if settings.firebase_credentials_path:
                 cred = fb_creds.Certificate(settings.firebase_credentials_path)

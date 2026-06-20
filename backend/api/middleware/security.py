@@ -23,9 +23,8 @@ from slowapi.util import get_remote_address
 
 from api.config import settings
 
-# ---------------------------------------------------------------------------
+
 # Security Logger — writes to logs/security.log separately from app logs
-# ---------------------------------------------------------------------------
 def setup_security_logger() -> logging.Logger:
     """Set up a dedicated logger for security events."""
     os.makedirs(settings.log_dir, exist_ok=True)
@@ -51,14 +50,10 @@ def setup_security_logger() -> logging.Logger:
 security_logger = setup_security_logger()
 app_logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
 # Rate Limiter
-# ---------------------------------------------------------------------------
 limiter = Limiter(key_func=get_remote_address)
 
-# ---------------------------------------------------------------------------
 # Request size limit
-# ---------------------------------------------------------------------------
 MAX_BODY_SIZE = 1 * 1024 * 1024  # 1MB
 
 
@@ -77,10 +72,8 @@ async def limit_request_size(request: Request, call_next: Callable) -> Response:
     return await call_next(request)
 
 
-# ---------------------------------------------------------------------------
 # Request ID tracking
 # Every request gets a unique ID injected into headers and logs
-# ---------------------------------------------------------------------------
 async def add_request_id(request: Request, call_next: Callable) -> Response:
     """Attach a unique request ID to every request and response."""
     request_id = str(uuid.uuid4())
@@ -96,9 +89,7 @@ async def add_request_id(request: Request, call_next: Callable) -> Response:
     return response
 
 
-# ---------------------------------------------------------------------------
 # Security headers
-# ---------------------------------------------------------------------------
 async def add_security_headers(request: Request, call_next: Callable) -> Response:
     """Add security headers to every response."""
     response = await call_next(request)
@@ -120,10 +111,8 @@ async def add_security_headers(request: Request, call_next: Callable) -> Respons
     return response
 
 
-# ---------------------------------------------------------------------------
 # API Key Authentication
 # Simple second layer — check X-API-Key header
-# ---------------------------------------------------------------------------
 def verify_api_key(request: Request) -> None:
     """
     Verify the X-API-Key header if REQUIRE_API_KEY=true.
@@ -160,11 +149,8 @@ def verify_api_key(request: Request) -> None:
             detail="Invalid API key.",
         )
 
-
-# ---------------------------------------------------------------------------
 # Filename sanitization
 # Prevents path traversal attacks like ../../etc/passwd
-# ---------------------------------------------------------------------------
 SAFE_FILENAME_RE = re.compile(r"^[\w\-. ]+$")
 
 
@@ -213,10 +199,7 @@ def sanitize_filename(filename: str) -> str:
 
     return basename
 
-
-# ---------------------------------------------------------------------------
 # Prompt injection detection
-# ---------------------------------------------------------------------------
 INJECTION_PATTERNS = [
     r"ignore\s+(all\s+)?(previous|prior|above)\s+instructions",
     r"disregard\s+(all\s+)?(previous|prior|above)\s+instructions",
@@ -232,7 +215,6 @@ INJECTION_PATTERNS = [
 COMPILED_PATTERNS = [
     re.compile(p, re.IGNORECASE) for p in INJECTION_PATTERNS
 ]
-
 
 def sanitize_question(question: str) -> str:
     """
