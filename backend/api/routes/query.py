@@ -5,6 +5,7 @@ GET  /api/query/stream — streaming Server-Sent Events answer
 import json
 import logging
 from typing import AsyncGenerator, Optional
+from functools import lru_cache
 
 from fastapi import Request
 from api.middleware.security import limiter, sanitize_question
@@ -15,15 +16,16 @@ from api.middleware.auth import AuthenticatedUser, get_current_user
 from api.models.schemas import QueryRequest, QueryResponse, SourceDocument, TokenUsage
 from api.providers import get_llm, get_vectorstore
 from api.config import settings
-from functools import lru_cache
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
 
 @lru_cache(maxsize=1)
 def _get_cached_agent():
     """Build LangGraph agent once and cache it."""
     return _build_agent()
+
 
 def _build_agent():
     from langgraph.graph import StateGraph, END
@@ -83,7 +85,7 @@ def _build_agent():
     def retrieve(state: GraphState):
         logger.info("Node: retrieve")
         query = state.get("rewritten_question") or state["question"]
-        fetch_k = max(settings.top_k_documents * 2, 6)
+        fetch_k = max(settings.top_k_documents, 3)
         docs = vectorstore.similarity_search(query, k=fetch_k)
         logger.info(f"Retrieved {len(docs)} candidate docs")
         return {"documents": docs}
@@ -146,15 +148,15 @@ def _build_agent():
                 "RAGAgent/1.0 (educational project; contact via github)"
             )
 
-            search_results = wikipedia.search(query, results=2)
+            search_results = wikipedia.search(query, results=1)
             wiki_docs = []
 
-            for title in search_results[:2]:
+            for title in search_results[:1]:
                 try:
                     page = wikipedia.page(title, auto_suggest=False)
                     wiki_docs.append(
                         Document(
-                            page_content=page.content[:1500],
+                            page_content=page.content[:500],
                             metadata={
                                 "source": f"wikipedia:{title}",
                                 "url": page.url,
@@ -168,7 +170,7 @@ def _build_agent():
                         page = wikipedia.page(e.options[0], auto_suggest=False)
                         wiki_docs.append(
                             Document(
-                                page_content=page.content[:1500],
+                                page_content=page.content[:500],
                                 metadata={
                                     "source": f"wikipedia:{e.options[0]}",
                                     "temporary": True,
@@ -192,7 +194,7 @@ def _build_agent():
         try:
             from ddgs import DDGS
             with DDGS() as ddgs:
-                results = list(ddgs.text(query, max_results=2))
+                results = list(ddgs.text(query, max_results=1))
             ddg_docs = [
                 Document(
                     page_content=f"{r['title']}\n\n{r['body']}",
