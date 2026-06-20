@@ -53,28 +53,19 @@ export default function LoginPage() {
           flexDirection: "column",
           alignItems: "center",
           gap: 16,
+          marginTop: -20,
         }}>
-          <div style={{
-            width: 80,
-            height: 80,
-            borderRadius: "50%",
-            background: "transparent",
-            boxShadow: "0 0 60px 20px rgba(74,222,128,0.12), 0 0 120px 50px rgba(74,222,128,0.05)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            animation: "glowPulse 3s ease-in-out infinite",
-          }}>
-            <img
-              src="/dragon-favicon.svg"
-              alt="d-RAG-on logo"
-              style={{
-                width: 60,
-                height: 60,
-                objectFit: "contain",
-              }}
-            />
-          </div>
+          <img
+            src="/dragon-favicon.svg"
+            alt="d-RAG-on logo"
+            style={{
+              width: 300,
+              height: 300,
+              objectFit: "contain",
+              filter: "drop-shadow(0 0 12px rgba(74,222,128,0.8)) drop-shadow(0 0 30px rgba(74,222,128,0.4)) drop-shadow(0 0 60px rgba(74,222,128,0.2))",
+              animation: "glowPulse 3s ease-in-out infinite",
+            }}
+          />
           <div style={{ textAlign: "center" }}>
             <div style={{
               fontSize: "1.6rem",
