@@ -59,9 +59,10 @@ export default function LoginPage() {
             src="/dragon-favicon.svg"
             alt="d-RAG-on logo"
             style={{
-              width: 300,
-              height: 300,
+              width: 150,
+              height: 150,
               objectFit: "contain",
+              mixBlendMode: "screen",
               filter: "drop-shadow(0 0 12px rgba(74,222,128,0.8)) drop-shadow(0 0 30px rgba(74,222,128,0.4)) drop-shadow(0 0 60px rgba(74,222,128,0.2))",
               animation: "glowPulse 3s ease-in-out infinite",
             }}
@@ -100,7 +101,6 @@ export default function LoginPage() {
             Sign in to continue
           </div>
 
-          {/* Google Sign In Button */}
           <button
             onClick={handleGoogleSignIn}
             disabled={loading}
