@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { X, User, MessageSquare, Zap, Globe, FileText, Clock, Mail, Calendar } from "lucide-react";
+import { X, FileText, Mail, Calendar, Zap } from "lucide-react";
 import { loadUserProfile } from "../firebase";
 
 function formatDate(ts) {
@@ -15,66 +15,6 @@ function formatNumber(n) {
   return n.toString();
 }
 
-function StatCard({ icon, label, value, sub }) {
-  return (
-    <div style={{
-      background: "var(--surface-2)",
-      border: "1px solid var(--border)",
-      borderRadius: "var(--radius-lg)",
-      padding: "16px 18px",
-      display: "flex",
-      flexDirection: "column",
-      gap: 8,
-      transition: "border-color var(--transition)",
-    }}
-      onMouseEnter={(e) => e.currentTarget.style.borderColor = "rgba(74,222,128,0.25)"}
-      onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border)"}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <div style={{
-          width: 28,
-          height: 28,
-          borderRadius: "var(--radius)",
-          background: "rgba(74,222,128,0.08)",
-          border: "1px solid rgba(74,222,128,0.15)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}>
-          {icon}
-        </div>
-        <span style={{
-          fontFamily: "var(--mono)",
-          fontSize: "0.62rem",
-          color: "var(--text-muted)",
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
-        }}>
-          {label}
-        </span>
-      </div>
-      <div style={{
-        fontSize: "1.6rem",
-        fontWeight: 600,
-        color: "var(--text)",
-        letterSpacing: "-0.02em",
-        lineHeight: 1,
-      }}>
-        {value}
-      </div>
-      {sub && (
-        <div style={{
-          fontSize: "0.7rem",
-          color: "var(--text-muted)",
-          fontFamily: "var(--mono)",
-        }}>
-          {sub}
-        </div>
-      )}
-    </div>
-  );
-}
-
 export default function ProfilePage({ user, chats, onClose }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -88,8 +28,11 @@ export default function ProfilePage({ user, chats, onClose }) {
     }
   }, [user?.uid]);
 
-  const totalMessages = chats.reduce((acc, c) => acc + (c.messages?.length || 0), 0);
-  const totalChats = chats.length;
+  const promptTokens = profile?.promptTokens || 0;
+  const completionTokens = profile?.completionTokens || 0;
+  const totalTokens = profile?.totalTokens || 0;
+  const promptPct = totalTokens ? Math.round((promptTokens / totalTokens) * 100) : 0;
+  const completionPct = totalTokens ? Math.round((completionTokens / totalTokens) * 100) : 0;
 
   return (
     <>
@@ -283,9 +226,7 @@ export default function ProfilePage({ user, chats, onClose }) {
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {[
                     { label: "Last active", value: formatDate(profile?.lastActiveAt || profile?.lastLoginAt) },
-                    { label: "Auth provider", value: "Google SSO" },
                     { label: "Model", value: "llama-3.1-8b" },
-                    { label: "Provider", value: "Groq" },
                   ].map(({ label, value }) => (
                     <div key={label} style={{
                       display: "flex",
@@ -316,7 +257,7 @@ export default function ProfilePage({ user, chats, onClose }) {
                 </div>
               </div>
 
-              {/* Usage stats */}
+              {/* Token usage bar */}
               <div>
                 <div style={{
                   fontFamily: "var(--mono)",
@@ -326,114 +267,173 @@ export default function ProfilePage({ user, chats, onClose }) {
                   textTransform: "uppercase",
                   marginBottom: 12,
                 }}>
-                  Usage
+                  Token Usage
                 </div>
                 <div style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: 10,
+                  background: "var(--surface-2)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "var(--radius-lg)",
+                  padding: "16px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 14,
                 }}>
-                  <StatCard
-                    icon={<MessageSquare size={13} color="var(--accent)" />}
-                    label="Chats"
-                    value={formatNumber(totalChats)}
-                    sub={`${formatNumber(totalMessages)} messages`}
-                  />
-                  <StatCard
-                    icon={<Zap size={13} color="var(--accent)" />}
-                    label="Tokens"
-                    value={formatNumber(profile?.totalTokens)}
-                    sub={`${formatNumber(profile?.promptTokens)} prompt`}
-                  />
-                  <StatCard
-                    icon={<Globe size={13} color="var(--accent)" />}
-                    label="Web searches"
-                    value={formatNumber(profile?.webSearchesUsed)}
-                    sub="fallback queries"
-                  />
-                  <StatCard
-                    icon={<FileText size={13} color="var(--accent)" />}
-                    label="Docs ingested"
-                    value={formatNumber(profile?.docsIngested)}
-                    sub="into vector store"
-                  />
+                  {/* Total count */}
+                  <div style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "baseline",
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <Zap size={13} color="var(--accent)" />
+                      <span style={{
+                        fontSize: "0.75rem",
+                        color: "var(--text-muted)",
+                        fontFamily: "var(--mono)",
+                      }}>
+                        Total tokens used
+                      </span>
+                    </div>
+                    <span style={{
+                      fontSize: "1.1rem",
+                      fontWeight: 600,
+                      color: "var(--accent)",
+                      fontFamily: "var(--mono)",
+                      letterSpacing: "-0.02em",
+                    }}>
+                      {formatNumber(totalTokens)}
+                    </span>
+                  </div>
+
+                  {/* Stacked bar */}
+                  <div style={{
+                    height: 8,
+                    background: "var(--border)",
+                    borderRadius: 4,
+                    overflow: "hidden",
+                    display: "flex",
+                  }}>
+                    <div style={{
+                      height: "100%",
+                      width: `${promptPct}%`,
+                      background: "rgba(74,222,128,0.5)",
+                      transition: "width 0.6s ease",
+                    }} />
+                    <div style={{
+                      height: "100%",
+                      width: `${completionPct}%`,
+                      background: "var(--accent)",
+                      transition: "width 0.6s ease",
+                    }} />
+                  </div>
+
+                  {/* Legend */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {[
+                      { label: "Prompt", value: promptTokens, pct: promptPct, color: "rgba(74,222,128,0.5)" },
+                      { label: "Completion", value: completionTokens, pct: completionPct, color: "var(--accent)" },
+                    ].map(({ label, value, pct, color }) => (
+                      <div key={label} style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <div style={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: 2,
+                            background: color,
+                            flexShrink: 0,
+                          }} />
+                          <span style={{
+                            fontSize: "0.72rem",
+                            color: "var(--text-muted)",
+                            fontFamily: "var(--mono)",
+                          }}>
+                            {label}
+                          </span>
+                        </div>
+                        <span style={{
+                          fontSize: "0.72rem",
+                          color: "var(--text-secondary)",
+                          fontFamily: "var(--mono)",
+                        }}>
+                          {formatNumber(value)} ({pct}%)
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              {/* Token breakdown */}
-              {profile?.totalTokens > 0 && (
-                <div>
-                  <div style={{
-                    fontFamily: "var(--mono)",
-                    fontSize: "0.6rem",
-                    color: "var(--text-muted)",
-                    letterSpacing: "0.08em",
-                    textTransform: "uppercase",
-                    marginBottom: 12,
-                  }}>
-                    Token breakdown
-                  </div>
-                  <div style={{
-                    background: "var(--surface-2)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "var(--radius-lg)",
-                    padding: "16px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 12,
-                  }}>
-                    {[
-                      { label: "Prompt tokens", value: profile?.promptTokens || 0, color: "rgba(74,222,128,0.7)" },
-                      { label: "Completion tokens", value: profile?.completionTokens || 0, color: "var(--accent)" },
-                    ].map(({ label, value, color }) => {
-                      const pct = profile?.totalTokens ? Math.round((value / profile.totalTokens) * 100) : 0;
-                      return (
-                        <div key={label}>
-                          <div style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            marginBottom: 6,
-                          }}>
-                            <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontFamily: "var(--mono)" }}>
-                              {label}
-                            </span>
-                            <span style={{ fontSize: "0.75rem", color: "var(--text)", fontFamily: "var(--mono)" }}>
-                              {formatNumber(value)} ({pct}%)
-                            </span>
-                          </div>
-                          <div style={{
-                            height: 4,
-                            background: "var(--border)",
-                            borderRadius: 2,
-                            overflow: "hidden",
-                          }}>
-                            <div style={{
-                              height: "100%",
-                              width: `${pct}%`,
-                              background: color,
-                              borderRadius: 2,
-                              transition: "width 0.6s ease",
-                            }} />
-                          </div>
-                        </div>
-                      );
-                    })}
+              {/* Docs ingested */}
+              <div>
+                <div style={{
+                  fontFamily: "var(--mono)",
+                  fontSize: "0.6rem",
+                  color: "var(--text-muted)",
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  marginBottom: 12,
+                }}>
+                  Documents
+                </div>
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "16px",
+                  background: "var(--surface-2)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "var(--radius-lg)",
+                  transition: "border-color var(--transition)",
+                }}
+                  onMouseEnter={(e) => e.currentTarget.style.borderColor = "rgba(74,222,128,0.25)"}
+                  onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border)"}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <div style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: "var(--radius)",
+                      background: "rgba(74,222,128,0.08)",
+                      border: "1px solid rgba(74,222,128,0.15)",
                       display: "flex",
-                      justifyContent: "space-between",
-                      paddingTop: 8,
-                      borderTop: "1px solid var(--border)",
+                      alignItems: "center",
+                      justifyContent: "center",
                     }}>
-                      <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontFamily: "var(--mono)" }}>
-                        Total
-                      </span>
-                      <span style={{ fontSize: "0.75rem", color: "var(--accent)", fontFamily: "var(--mono)", fontWeight: 600 }}>
-                        {formatNumber(profile?.totalTokens)}
-                      </span>
+                      <FileText size={14} color="var(--accent)" />
+                    </div>
+                    <div>
+                      <div style={{
+                        fontSize: "0.78rem",
+                        color: "var(--text)",
+                        fontFamily: "var(--mono)",
+                        fontWeight: 500,
+                      }}>
+                        Docs ingested
+                      </div>
+                      <div style={{
+                        fontSize: "0.65rem",
+                        color: "var(--text-muted)",
+                        fontFamily: "var(--mono)",
+                      }}>
+                        into vector store
+                      </div>
                     </div>
                   </div>
+                  <div style={{
+                    fontSize: "1.6rem",
+                    fontWeight: 600,
+                    color: "var(--text)",
+                    letterSpacing: "-0.02em",
+                    fontFamily: "var(--mono)",
+                  }}>
+                    {formatNumber(profile?.docsIngested)}
+                  </div>
                 </div>
-              )}
+              </div>
 
             </div>
           )}
