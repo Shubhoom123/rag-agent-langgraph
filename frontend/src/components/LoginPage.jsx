@@ -62,8 +62,6 @@ export default function LoginPage() {
               width: 150,
               height: 150,
               objectFit: "contain",
-              filter: "drop-shadow(0 0 12px rgba(74,222,128,0.8)) drop-shadow(0 0 30px rgba(74,222,128,0.4)) drop-shadow(0 0 60px rgba(74,222,128,0.2))",
-              animation: "glowPulse 3s ease-in-out infinite",
             }}
           />
           <div style={{ textAlign: "center" }}>
