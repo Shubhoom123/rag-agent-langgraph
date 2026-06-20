@@ -15,10 +15,15 @@ from api.middleware.auth import AuthenticatedUser, get_current_user
 from api.models.schemas import QueryRequest, QueryResponse, SourceDocument, TokenUsage
 from api.providers import get_llm, get_vectorstore
 from api.config import settings
+from functools import lru_cache
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+@lru_cache(maxsize=1)
+def _get_cached_agent():
+    """Build LangGraph agent once and cache it."""
+    return _build_agent()
 
 def _build_agent():
     from langgraph.graph import StateGraph, END
@@ -307,7 +312,7 @@ async def query(
     body.question = sanitize_question(body.question)
 
     try:
-        app = _build_agent()
+        app = _get_cached_agent()
     except EnvironmentError as e:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e)
@@ -374,7 +379,7 @@ async def query_stream(
 
     async def event_generator() -> AsyncGenerator[str, None]:
         try:
-            app = _build_agent()
+            app = _get_cached_agent()
         except EnvironmentError as e:
             yield f"data: {json.dumps({'error': str(e)})}\n\n"
             return
