@@ -55,25 +55,26 @@ export default function LoginPage() {
           gap: 16,
         }}>
           <div style={{
-            width: 72,
-            height: 72,
+            width: 80,
+            height: 80,
             borderRadius: "50%",
-            background: "radial-gradient(circle at center, rgba(74,222,128,0.3) 0%, rgba(74,222,128,0.08) 50%, transparent 70%)",
+            background: "radial-gradient(circle at center, rgba(74,222,128,0.18) 0%, rgba(74,222,128,0.06) 55%, transparent 75%)",
             boxShadow: "0 0 60px 20px rgba(74,222,128,0.12), 0 0 120px 50px rgba(74,222,128,0.05)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             animation: "glowPulse 3s ease-in-out infinite",
           }}>
-            <div style={{
-              width: 14,
-              height: 14,
-              borderRadius: "50%",
-              background: "#4ade80",
-              boxShadow: "0 0 10px #4ade80, 0 0 20px rgba(74,222,128,0.6)",
-            }} />
+            <img
+              src="/favicon-32x32.png"
+              alt="d-RAG-on logo"
+              style={{
+                width: 40,
+                height: 40,
+                objectFit: "contain",
+              }}
+            />
           </div>
-
           <div style={{ textAlign: "center" }}>
             <div style={{
               fontSize: "1.6rem",
@@ -82,17 +83,7 @@ export default function LoginPage() {
               letterSpacing: "-0.02em",
               marginBottom: 6,
             }}>
-              RAG Agent
-            </div>
-            <div style={{
-              fontFamily: "var(--mono)",
-              fontSize: "0.72rem",
-              color: "#4ade80",
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              opacity: 0.7,
-            }}>
-              LangGraph · Pinecone · Groq
+              d-RAG-on
             </div>
           </div>
         </div>

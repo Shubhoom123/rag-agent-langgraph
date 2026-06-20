@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
-import { getFirestore, doc, setDoc, getDoc, collection, addDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs, updateDoc, serverTimestamp, orderBy, query } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -47,6 +47,21 @@ export async function saveUserProfile(user) {
       lastLoginAt: serverTimestamp(),
     });
   }
+}
+
+// Load all chats for a user from Firestore
+export async function loadChats(userId) {
+  const chatsRef = collection(db, "users", userId, "chats");
+  const q = query(chatsRef, orderBy("updatedAt", "desc"));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((doc) => doc.data());
+}
+
+// Delete a chat from Firestore
+export async function deleteChat(userId, chatId) {
+  const { deleteDoc } = await import("firebase/firestore");
+  const chatRef = doc(db, "users", userId, "chats", chatId);
+  await deleteDoc(chatRef);
 }
 
 // Save a chat session to Firestore
