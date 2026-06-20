@@ -330,8 +330,8 @@ export default function ProfilePage({ user, chats, onClose }) {
                   {/* Legend */}
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {[
-                      { label: "Prompt", value: promptTokens, pct: promptPct, color: "rgba(74,222,128,0.5)" },
-                      { label: "Completion", value: completionTokens, pct: completionPct, color: "var(--accent)" },
+                      { label: "Input Tokens", value: promptTokens, pct: promptPct, color: "rgba(74,222,128,0.5)" },
+                      { label: "Output Tokens", value: completionTokens, pct: completionPct, color: "var(--accent)" },
                     ].map(({ label, value, pct, color }) => (
                       <div key={label} style={{
                         display: "flex",
