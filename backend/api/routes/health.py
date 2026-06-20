@@ -2,7 +2,6 @@
 GET /api/health
 
 Checks that the LLM and vector store are reachable.
-Useful for Railway/Render health checks and frontend status indicators.
 """
 import logging
 
@@ -24,9 +23,7 @@ async def health_check() -> HealthResponse:
     llm_ok = False
     vs_ok = False
 
-    # ------------------------------------------------------------------
     # Check LLM
-    # ------------------------------------------------------------------
     try:
         if settings.llm_provider == "ollama":
             import httpx
@@ -39,9 +36,7 @@ async def health_check() -> HealthResponse:
     except Exception as e:
         logger.warning(f"LLM health check failed: {e}")
 
-    # ------------------------------------------------------------------
     # Check Vector Store
-    # ------------------------------------------------------------------
     try:
         if settings.vector_store_provider == "chroma":
             import os

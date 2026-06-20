@@ -6,9 +6,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
-# ---------------------------------------------------------------------------
 # /api/query
-# ---------------------------------------------------------------------------
 class ChatMessage(BaseModel):
     role: str   # "user" or "assistant"
     text: str
@@ -48,18 +46,13 @@ class QueryResponse(BaseModel):
     session_id: Optional[str] = None
 
 
-# ---------------------------------------------------------------------------
 # /api/ingest
-# ---------------------------------------------------------------------------
 class IngestResponse(BaseModel):
     message: str
     chunks_added: int
     filename: str
 
-
-# ---------------------------------------------------------------------------
 # /api/health
-# ---------------------------------------------------------------------------
 class HealthResponse(BaseModel):
     status: str
     llm_provider: str
