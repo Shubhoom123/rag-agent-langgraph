@@ -36,6 +36,8 @@ class Settings(BaseSettings):
     # ------------------------------------------------------------------
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     hf_token: str = ""
+    use_pinecone_inference: bool = False
+    pinecone_inference_model: str = "multilingual-e5-large"
 
     # ------------------------------------------------------------------
     # Vector Store
@@ -58,9 +60,7 @@ class Settings(BaseSettings):
     require_auth: bool = False
 
     # ------------------------------------------------------------------
-    # API Key Auth (second layer before Firebase)
-    # Set a strong random string here
-    # Generate one with: python3 -c "import secrets; print(secrets.token_hex(32))"
+    # API Key Auth
     # ------------------------------------------------------------------
     api_key: str = ""
     require_api_key: bool = False
@@ -108,9 +108,6 @@ class Settings(BaseSettings):
             raise ValueError(f"vector_store_provider must be one of {allowed}, got '{v}'")
         return v
 
-    # ------------------------------------------------------------------
-    # Startup validation — fail loudly if required keys are missing
-    # ------------------------------------------------------------------
     @model_validator(mode="after")
     def validate_required_secrets(self) -> "Settings":
         errors = []
