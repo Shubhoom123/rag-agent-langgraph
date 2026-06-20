@@ -51,11 +51,7 @@ export default function Sidebar({ user, status, setStatus, chats, activeChatId, 
           <img
             src="/dragon-favicon.svg"
             alt="d-RAG-on"
-            style={{
-              width: 22,
-              height: 22,
-              objectFit: "contain",
-            }}
+            style={{ width: 22, height: 22, objectFit: "contain" }}
           />
         </button>
         <button
@@ -119,11 +115,7 @@ export default function Sidebar({ user, status, setStatus, chats, activeChatId, 
               <img
                 src="/dragon-favicon.svg"
                 alt="d-RAG-on"
-                style={{
-                  width: 28,
-                  height: 28,
-                  objectFit: "contain",
-                }}
+                style={{ width: 28, height: 28, objectFit: "contain" }}
               />
             </div>
             <div>
@@ -340,43 +332,51 @@ export default function Sidebar({ user, status, setStatus, chats, activeChatId, 
           justifyContent: "space-between",
           padding: "4px 2px 0",
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, overflow: "hidden" }}>
+          {/* Clickable user info area */}
+          <div
+            onClick={onOpenProfile}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              overflow: "hidden",
+              flex: 1,
+              cursor: "pointer",
+              borderRadius: "var(--radius)",
+              padding: "4px 6px",
+              marginLeft: -6,
+              transition: "background var(--transition)",
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = "var(--surface-2)"}
+            onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+          >
             {user?.photoURL ? (
               <img
                 src={user.photoURL}
                 alt={user.displayName}
-                onClick={onOpenProfile}
                 style={{
                   width: 30,
                   height: 30,
                   borderRadius: "50%",
                   border: "1px solid var(--border)",
                   flexShrink: 0,
-                  cursor: "pointer",
-                  transition: "border-color var(--transition)",
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.borderColor = "rgba(74,222,128,0.5)"}
-                onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border)"}
               />
             ) : (
-              <div
-                onClick={onOpenProfile}
-                style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: "50%",
-                  background: "var(--accent-dim)",
-                  border: "1px solid rgba(74,222,128,0.3)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                  fontSize: "0.75rem",
-                  fontWeight: 600,
-                  color: "var(--accent)",
-                  cursor: "pointer",
-                }}
-              >
+              <div style={{
+                width: 30,
+                height: 30,
+                borderRadius: "50%",
+                background: "var(--accent-dim)",
+                border: "1px solid rgba(74,222,128,0.3)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+                fontSize: "0.75rem",
+                fontWeight: 600,
+                color: "var(--accent)",
+              }}>
                 {user?.displayName?.[0] || user?.email?.[0] || "U"}
               </div>
             )}
@@ -392,11 +392,7 @@ export default function Sidebar({ user, status, setStatus, chats, activeChatId, 
               }}>
                 {user?.displayName || "User"}
               </div>
-              <div style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 4,
-              }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                 <div style={{
                   width: 5,
                   height: 5,
@@ -419,6 +415,7 @@ export default function Sidebar({ user, status, setStatus, chats, activeChatId, 
             </div>
           </div>
 
+          {/* Sign out button */}
           <button
             onClick={logOut}
             title="Sign out"
