@@ -49,13 +49,12 @@ export default function Sidebar({ user, status, setStatus, chats, activeChatId, 
           }}
         >
           <img
-            src="/favicon_32.png"
-            alt="RAG"
+            src="/dragon-favicon.svg"
+            alt="d-RAG-on"
             style={{
               width: 22,
               height: 22,
               objectFit: "contain",
-              filter: "invert(1) brightness(0.7) sepia(1) saturate(5) hue-rotate(95deg)",
             }}
           />
         </button>
@@ -118,13 +117,12 @@ export default function Sidebar({ user, status, setStatus, chats, activeChatId, 
               flexShrink: 0,
             }}>
               <img
-                src="/favicon_32.png"
-                alt="RAG Agent"
+                src="/dragon-favicon.svg"
+                alt="d-RAG-on"
                 style={{
-                  width: 20,
-                  height: 20,
+                  width: 28,
+                  height: 28,
                   objectFit: "contain",
-                  filter: "invert(1) brightness(0.7) sepia(1) saturate(5) hue-rotate(95deg)",
                 }}
               />
             </div>
@@ -136,7 +134,7 @@ export default function Sidebar({ user, status, setStatus, chats, activeChatId, 
                 letterSpacing: "-0.01em",
                 lineHeight: 1.2,
               }}>
-                LangGraph
+                d-RAG-on
               </div>
               <div style={{
                 fontFamily: "var(--mono)",
@@ -146,7 +144,7 @@ export default function Sidebar({ user, status, setStatus, chats, activeChatId, 
                 textTransform: "uppercase",
                 opacity: 0.7,
               }}>
-                RAG AGENT
+                RAG Agent
               </div>
             </div>
           </div>
@@ -343,7 +341,6 @@ export default function Sidebar({ user, status, setStatus, chats, activeChatId, 
           padding: "4px 2px 0",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, overflow: "hidden" }}>
-            {/* User avatar */}
             {user?.photoURL ? (
               <img
                 src={user.photoURL}
@@ -413,7 +410,6 @@ export default function Sidebar({ user, status, setStatus, chats, activeChatId, 
             </div>
           </div>
 
-          {/* Sign out button */}
           <button
             onClick={logOut}
             title="Sign out"

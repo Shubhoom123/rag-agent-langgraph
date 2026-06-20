@@ -53,28 +53,17 @@ export default function LoginPage() {
           flexDirection: "column",
           alignItems: "center",
           gap: 16,
+          marginTop: -20,
         }}>
-          <div style={{
-            width: 80,
-            height: 80,
-            borderRadius: "50%",
-            background: "radial-gradient(circle at center, rgba(74,222,128,0.18) 0%, rgba(74,222,128,0.06) 55%, transparent 75%)",
-            boxShadow: "0 0 60px 20px rgba(74,222,128,0.12), 0 0 120px 50px rgba(74,222,128,0.05)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            animation: "glowPulse 3s ease-in-out infinite",
-          }}>
-            <img
-              src="/favicon-32x32.png"
-              alt="d-RAG-on logo"
-              style={{
-                width: 40,
-                height: 40,
-                objectFit: "contain",
-              }}
-            />
-          </div>
+          <img
+            src="/dragon-favicon.svg"
+            alt="d-RAG-on logo"
+            style={{
+              width: 150,
+              height: 150,
+              objectFit: "contain",
+            }}
+          />
           <div style={{ textAlign: "center" }}>
             <div style={{
               fontSize: "1.6rem",
@@ -109,7 +98,6 @@ export default function LoginPage() {
             Sign in to continue
           </div>
 
-          {/* Google Sign In Button */}
           <button
             onClick={handleGoogleSignIn}
             disabled={loading}
