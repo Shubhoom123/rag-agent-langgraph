@@ -5,12 +5,10 @@ Using Pydantic v2 for validation.
 from typing import List, Optional
 from pydantic import BaseModel, Field
 
-
 # /api/query
 class ChatMessage(BaseModel):
     role: str   # "user" or "assistant"
     text: str
-
 
 class QueryRequest(BaseModel):
     question: str = Field(
@@ -27,16 +25,18 @@ class QueryRequest(BaseModel):
         default=None,
         description="Optional session ID",
     )
-
     model_config = {
         "json_schema_extra": {"example": {"question": "What is LangGraph?"}}
     }
-
 
 class SourceDocument(BaseModel):
     content: str = Field(..., description="Chunk of text from the source document")
     score: Optional[float] = Field(default=None, description="Relevance score")
 
+class TokenUsage(BaseModel):
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
 
 class QueryResponse(BaseModel):
     answer: str
@@ -44,7 +44,7 @@ class QueryResponse(BaseModel):
     web_search_used: bool
     retries: int
     session_id: Optional[str] = None
-
+    token_usage: Optional[TokenUsage] = None
 
 # /api/ingest
 class IngestResponse(BaseModel):

@@ -74,3 +74,36 @@ export async function saveChat(userId, chat) {
     updatedAt: serverTimestamp(),
   });
 }
+
+// Save usage stats after each query
+export async function saveUsageStats(userId, stats) {
+  const userRef = doc(db, "users", userId);
+  const existing = await getDoc(userRef);
+  const current = existing.data() || {};
+
+  await updateDoc(userRef, {
+    totalTokens: (current.totalTokens || 0) + (stats.tokens || 0),
+    promptTokens: (current.promptTokens || 0) + (stats.promptTokens || 0),
+    completionTokens: (current.completionTokens || 0) + (stats.completionTokens || 0),
+    totalQueries: (current.totalQueries || 0) + 1,
+    webSearchesUsed: (current.webSearchesUsed || 0) + (stats.webSearchUsed ? 1 : 0),
+    lastActiveAt: serverTimestamp(),
+  });
+}
+
+// Load user profile
+export async function loadUserProfile(userId) {
+  const userRef = doc(db, "users", userId);
+  const snap = await getDoc(userRef);
+  return snap.exists() ? snap.data() : null;
+}
+
+// Save docs ingested count
+export async function incrementDocsIngested(userId) {
+  const userRef = doc(db, "users", userId);
+  const existing = await getDoc(userRef);
+  const current = existing.data() || {};
+  await updateDoc(userRef, {
+    docsIngested: (current.docsIngested || 0) + 1,
+  });
+}

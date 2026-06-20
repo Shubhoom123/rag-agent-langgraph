@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Send, MoreHorizontal } from "lucide-react";
+import { saveUsageStats } from "../firebase";
+
 import Message from "./Message";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -49,6 +51,16 @@ export default function ChatWindow({ messages, setMessages, loading, setLoading 
           webSearchUsed: data.web_search_used,
           retries: data.retries,
         }]);
+
+        // Track usage in Firestore
+        if (user?.uid && data.token_usage) {
+          saveUsageStats(user.uid, {
+            tokens: data.token_usage.total_tokens,
+            promptTokens: data.token_usage.prompt_tokens,
+            completionTokens: data.token_usage.completion_tokens,
+            webSearchUsed: data.web_search_used,
+          }).catch(console.error);
+        }
       } else {
         setMessages([...newMessages, { role: "error", text: data.detail || "Something went wrong." }]);
       }

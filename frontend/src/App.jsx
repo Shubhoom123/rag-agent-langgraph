@@ -4,6 +4,7 @@ import { auth } from "./firebase";
 import Sidebar from "./components/Sidebar";
 import ChatWindow from "./components/ChatWindow";
 import LoginPage from "./components/LoginPage";
+import ProfilePage from "./components/ProfilePage";
 import "./index.css";
 import { saveChat, loadChats, deleteChat as deleteChatFromFirestore } from "./firebase";
 
@@ -22,8 +23,8 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState(null);
   const [mounted, setMounted] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
 
-  // Listen to Firebase auth state and load chats on login
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
@@ -38,7 +39,6 @@ export default function App() {
           console.error("Failed to load chats:", err);
         }
       } else {
-        // Reset on logout
         const fresh = createChat();
         setChats([fresh]);
         setActiveChatId(fresh.id);
@@ -67,12 +67,9 @@ export default function App() {
             ? firstUser.text.slice(0, 36) + (firstUser.text.length > 36 ? "…" : "")
             : c.title;
         const updatedChat = { ...c, messages: newMessages, title };
-  
-        // Save to Firestore
         if (user?.uid) {
           saveChat(user.uid, updatedChat).catch(console.error);
         }
-  
         return updatedChat;
       })
     );
@@ -85,7 +82,6 @@ export default function App() {
   }
 
   function deleteChat(id) {
-    // Delete from Firestore
     if (user?.uid) {
       deleteChatFromFirestore(user.uid, id).catch(console.error);
     }
@@ -103,7 +99,6 @@ export default function App() {
     });
   }
 
-  // Show nothing while checking auth state
   if (authLoading) {
     return (
       <div style={{
@@ -125,12 +120,10 @@ export default function App() {
     );
   }
 
-  // Show login page if not authenticated
   if (!user) {
     return <LoginPage />;
   }
 
-  // Show main app if authenticated
   return (
     <div style={{
       display: "flex",
@@ -150,6 +143,7 @@ export default function App() {
         onSelectChat={setActiveChatId}
         onNewChat={newChat}
         onDeleteChat={deleteChat}
+        onOpenProfile={() => setShowProfile(true)}
       />
       <ChatWindow
         key={activeChatId}
@@ -159,6 +153,13 @@ export default function App() {
         loading={loading}
         setLoading={setLoading}
       />
+      {showProfile && (
+        <ProfilePage
+          user={user}
+          chats={chats}
+          onClose={() => setShowProfile(false)}
+        />
+      )}
     </div>
   );
 }

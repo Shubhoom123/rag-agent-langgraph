@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 
 from api.middleware.auth import AuthenticatedUser, get_current_user
-from api.models.schemas import QueryRequest, QueryResponse, SourceDocument
+from api.models.schemas import QueryRequest, QueryResponse, SourceDocument, TokenUsage
 from api.providers import get_llm, get_vectorstore
 from api.config import settings
 
@@ -38,18 +38,14 @@ def _build_agent():
         question: str
         rewritten_question: str
         generation: Optional[str]
-        documents: List[Document]         # all retrieved docs
-        filtered_documents: List[Document] # only relevant docs passed to generate
+        documents: List[Document]
+        filtered_documents: List[Document]
         relevance_score: float
         retries: int
         web_search_needed: bool
         history: List[dict]
+        token_usage: Optional[dict]
 
-    # ------------------------------------------------------------------
-    # Node 1 — Query Rewriter
-    # Keep the original question meaning — just extract key terms.
-    # Don't rewrite short questions (≤8 words) to avoid losing intent.
-    # ------------------------------------------------------------------
     def rewrite_query(state: GraphState):
         logger.info("Node: rewrite_query")
         question = state["question"]
@@ -72,7 +68,6 @@ def _build_agent():
             response.content if hasattr(response, "content") else str(response)
         ).strip()
 
-        # Safety: if rewrite looks wrong (too short or garbled), use original
         if len(rewritten.split()) < 2:
             logger.warning("Rewrite too short — using original question")
             return {"rewritten_question": question}
@@ -80,26 +75,14 @@ def _build_agent():
         logger.info(f"Rewritten: '{question}' → '{rewritten}'")
         return {"rewritten_question": rewritten}
 
-    # ------------------------------------------------------------------
-    # Node 2 — Retrieve
-    # Fetch more docs than needed (k=6) so grading has more to filter.
-    # Better recall → grader picks the best → generate gets clean context.
-    # ------------------------------------------------------------------
     def retrieve(state: GraphState):
         logger.info("Node: retrieve")
         query = state.get("rewritten_question") or state["question"]
-        # Retrieve double the configured k so grading has more to work with
         fetch_k = max(settings.top_k_documents * 2, 6)
         docs = vectorstore.similarity_search(query, k=fetch_k)
         logger.info(f"Retrieved {len(docs)} candidate docs")
         return {"documents": docs}
 
-    # ------------------------------------------------------------------
-    # Node 3 — Grade Documents
-    # Grade each doc individually, keep only relevant ones in
-    # filtered_documents. Generate uses filtered_documents, not all docs.
-    # This is the key fix: don't pass bad context to the LLM.
-    # ------------------------------------------------------------------
     def grade_documents(state: GraphState):
         logger.info("Node: grade_documents")
         docs = state["documents"]
@@ -135,7 +118,6 @@ def _build_agent():
             f"(score: {relevance_score:.2f})"
         )
 
-        # Limit to top 3 relevant docs for generation — avoid token overflow
         top_relevant = relevant_docs[:3]
         web_search_needed = len(relevant_docs) == 0
 
@@ -145,17 +127,12 @@ def _build_agent():
             "filtered_documents": top_relevant,
         }
 
-    # ------------------------------------------------------------------
-    # Node 4 — Web Search + Wikipedia
-    # Docs stored in state only — NOT written to Pinecone
-    # ------------------------------------------------------------------
     def web_search_node(state: GraphState):
         logger.info("Node: web_search")
         retries = state.get("retries", 0) + 1
         query = state.get("rewritten_question") or state["question"]
         temp_docs = []
 
-        # Source 1 — Wikipedia
         try:
             import wikipedia
             import time
@@ -207,7 +184,6 @@ def _build_agent():
         except Exception as e:
             logger.warning(f"Wikipedia search failed: {e}")
 
-        # Source 2 — DuckDuckGo
         try:
             from ddgs import DDGS
             with DDGS() as ddgs:
@@ -224,12 +200,8 @@ def _build_agent():
         except Exception as e:
             logger.warning(f"DuckDuckGo failed: {e}")
 
-        # Merge with existing Pinecone docs — temp docs NOT stored in Pinecone
         existing_docs = state.get("documents", [])
         all_docs = existing_docs + temp_docs
-
-        # Web search results are pre-selected — treat them all as relevant
-        # Cap at 3 to avoid bloating the context window
         filtered = temp_docs[:3] if temp_docs else all_docs[:3]
 
         return {
@@ -239,15 +211,9 @@ def _build_agent():
             "filtered_documents": filtered,
         }
 
-    # ------------------------------------------------------------------
-    # Node 5 — Generate
-    # Uses filtered_documents (relevant only) — not the raw retrieved set.
-    # Falls back to all documents if filtering left nothing.
-    # ------------------------------------------------------------------
     def generate(state: GraphState):
         logger.info("Node: generate")
 
-        # Prefer filtered (relevant-only) docs; fall back to all if empty
         docs_to_use = state.get("filtered_documents") or state["documents"]
         context = "\n\n".join(d.page_content for d in docs_to_use)
         logger.info(f"Generating with {len(docs_to_use)} docs")
@@ -279,11 +245,28 @@ def _build_agent():
         text = (
             response.content if hasattr(response, "content") else str(response)
         )
-        return {"generation": text, "documents": state["documents"]}
 
-    # ------------------------------------------------------------------
-    # Routing
-    # ------------------------------------------------------------------
+        token_usage = None
+        if hasattr(response, "usage_metadata") and response.usage_metadata:
+            token_usage = {
+                "prompt_tokens": response.usage_metadata.get("input_tokens", 0),
+                "completion_tokens": response.usage_metadata.get("output_tokens", 0),
+                "total_tokens": response.usage_metadata.get("total_tokens", 0),
+            }
+        elif hasattr(response, "response_metadata"):
+            meta = response.response_metadata.get("token_usage", {})
+            token_usage = {
+                "prompt_tokens": meta.get("prompt_tokens", 0),
+                "completion_tokens": meta.get("completion_tokens", 0),
+                "total_tokens": meta.get("total_tokens", 0),
+            }
+
+        return {
+            "generation": text,
+            "documents": state["documents"],
+            "token_usage": token_usage,
+        }
+
     def decide_to_generate(state: GraphState) -> str:
         if not state.get("web_search_needed", False):
             return "generate"
@@ -292,10 +275,6 @@ def _build_agent():
         logger.info("Max retries reached — generating with available docs")
         return "generate"
 
-    # ------------------------------------------------------------------
-    # Graph — web_search now goes directly to generate
-    # since docs are already in state
-    # ------------------------------------------------------------------
     workflow = StateGraph(GraphState)
     workflow.add_node("rewrite_query", rewrite_query)
     workflow.add_node("retrieve", retrieve)
@@ -311,16 +290,12 @@ def _build_agent():
         decide_to_generate,
         {"generate": "generate", "web_search": "web_search"},
     )
-    # After web search docs are in state — go straight to generate
     workflow.add_edge("web_search", "generate")
     workflow.add_edge("generate", END)
 
     return workflow.compile()
 
 
-# ---------------------------------------------------------------------------
-# POST /api/query
-# ---------------------------------------------------------------------------
 @router.post("/query", response_model=QueryResponse)
 @limiter.limit("10/minute")
 async def query(
@@ -348,6 +323,7 @@ async def query(
         "retries": 0,
         "web_search_needed": False,
         "history": [m.model_dump() for m in body.history],
+        "token_usage": None,
     }
 
     try:
@@ -364,18 +340,25 @@ async def query(
         for doc in result.get("documents", [])
     ]
 
+    token_usage = None
+    raw_usage = result.get("token_usage")
+    if raw_usage:
+        token_usage = TokenUsage(
+            prompt_tokens=raw_usage.get("prompt_tokens", 0),
+            completion_tokens=raw_usage.get("completion_tokens", 0),
+            total_tokens=raw_usage.get("total_tokens", 0),
+        )
+
     return QueryResponse(
         answer=result.get("generation") or "Unable to generate an answer.",
         sources=sources,
         web_search_used=result.get("retries", 0) > 0,
         retries=result.get("retries", 0),
         session_id=body.session_id,
+        token_usage=token_usage,
     )
 
 
-# ---------------------------------------------------------------------------
-# GET /api/query/stream
-# ---------------------------------------------------------------------------
 @router.get("/query/stream")
 async def query_stream(
     question: str,
@@ -406,6 +389,7 @@ async def query_stream(
             "retries": 0,
             "web_search_needed": False,
             "history": [],
+            "token_usage": None,
         }
 
         try:

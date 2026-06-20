@@ -5,7 +5,7 @@ import { logOut } from "../firebase";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
-export default function Sidebar({ user, status, setStatus, chats, activeChatId, onSelectChat, onNewChat, onDeleteChat }) {
+export default function Sidebar({ user, status, setStatus, chats, activeChatId, onSelectChat, onNewChat, onDeleteChat, onOpenProfile }) {
   const [showUpload, setShowUpload] = useState(false);
   const [search, setSearch] = useState("");
   const [collapsed, setCollapsed] = useState(false);
@@ -345,29 +345,38 @@ export default function Sidebar({ user, status, setStatus, chats, activeChatId, 
               <img
                 src={user.photoURL}
                 alt={user.displayName}
+                onClick={onOpenProfile}
                 style={{
                   width: 30,
                   height: 30,
                   borderRadius: "50%",
                   border: "1px solid var(--border)",
                   flexShrink: 0,
+                  cursor: "pointer",
+                  transition: "border-color var(--transition)",
                 }}
+                onMouseEnter={(e) => e.currentTarget.style.borderColor = "rgba(74,222,128,0.5)"}
+                onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border)"}
               />
             ) : (
-              <div style={{
-                width: 30,
-                height: 30,
-                borderRadius: "50%",
-                background: "var(--accent-dim)",
-                border: "1px solid rgba(74,222,128,0.3)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-                fontSize: "0.75rem",
-                fontWeight: 600,
-                color: "var(--accent)",
-              }}>
+              <div
+                onClick={onOpenProfile}
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: "50%",
+                  background: "var(--accent-dim)",
+                  border: "1px solid rgba(74,222,128,0.3)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                  fontSize: "0.75rem",
+                  fontWeight: 600,
+                  color: "var(--accent)",
+                  cursor: "pointer",
+                }}
+              >
                 {user?.displayName?.[0] || user?.email?.[0] || "U"}
               </div>
             )}
