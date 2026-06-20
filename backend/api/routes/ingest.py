@@ -4,8 +4,9 @@ POST /api/ingest
 Upload a .txt or .pdf file and add it to the vector store.
 """
 import logging
+from typing import Optional
 
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -54,38 +55,25 @@ def _extract_text_from_pdf(content: bytes) -> str:
 async def ingest_document(
     request: Request,
     file: UploadFile = File(...),
+    user_id: Optional[str] = Form(default=None),
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> IngestResponse:
-    """
-    Upload a document and add it to the vector store.
-
-    Accepted types : .txt, .pdf
-    Max size       : 10 MB
-    """
-    # ------------------------------------------------------------------
-    # API key check (second layer before Firebase)
-    # ------------------------------------------------------------------
     verify_api_key(request)
 
-    # ------------------------------------------------------------------
-    # Sanitize filename — prevent path traversal
-    # ------------------------------------------------------------------
     raw_filename = file.filename or "unknown"
     filename = sanitize_filename(raw_filename)
 
-    logger.info(f"Ingest from user={user.uid!r}, file={filename!r}")
+    # Use user_id from form if provided, otherwise fall back to auth uid
+    namespace = user_id or user.uid
+    logger.info(f"Ingest from user={namespace!r}, file={filename!r}")
 
-    # ------------------------------------------------------------------
-    # Validate file type
-    # ------------------------------------------------------------------
     content_type = file.content_type or ""
-
     is_pdf = filename.endswith(".pdf") or content_type == "application/pdf"
     is_txt = filename.endswith(".txt") or content_type == "text/plain"
 
     if not (is_pdf or is_txt):
         security_logger.warning(
-            f"INVALID_FILE_TYPE | user={user.uid!r} | "
+            f"INVALID_FILE_TYPE | user={namespace!r} | "
             f"file={filename!r} | type={content_type!r}"
         )
         raise HTTPException(
@@ -93,14 +81,11 @@ async def ingest_document(
             detail=f"Unsupported file type '{content_type}'. Accepted: .txt, .pdf",
         )
 
-    # ------------------------------------------------------------------
-    # Read and size-check
-    # ------------------------------------------------------------------
     content = await file.read()
 
     if len(content) > MAX_FILE_SIZE_BYTES:
         security_logger.warning(
-            f"OVERSIZED_FILE | user={user.uid!r} | "
+            f"OVERSIZED_FILE | user={namespace!r} | "
             f"file={filename!r} | size={len(content)}"
         )
         raise HTTPException(
@@ -114,9 +99,6 @@ async def ingest_document(
             detail="Uploaded file is empty.",
         )
 
-    # ------------------------------------------------------------------
-    # Extract text
-    # ------------------------------------------------------------------
     try:
         raw_text = (
             _extract_text_from_pdf(content)
@@ -138,16 +120,13 @@ async def ingest_document(
             detail="No text content found in the uploaded file.",
         )
 
-    # ------------------------------------------------------------------
-    # Chunk and embed
-    # ------------------------------------------------------------------
     chunks = splitter.split_text(raw_text)
     documents = [
         Document(
             page_content=chunk,
             metadata={
                 "source": filename,
-                "uploaded_by": user.uid,
+                "uploaded_by": namespace,
                 "request_id": getattr(request.state, "request_id", "unknown"),
             },
         )
@@ -156,7 +135,7 @@ async def ingest_document(
 
     try:
         vectorstore = get_vectorstore()
-        vectorstore.add_documents(documents)
+        vectorstore.add_documents(documents, namespace=namespace)
     except Exception as e:
         logger.error(f"Vectorstore write failed: {e}", exc_info=True)
         raise HTTPException(
@@ -164,7 +143,7 @@ async def ingest_document(
             detail="Failed to add documents to vector store.",
         )
 
-    logger.info(f"Added {len(documents)} chunks from {filename!r}")
+    logger.info(f"Added {len(documents)} chunks from {filename!r} to namespace={namespace!r}")
 
     return IngestResponse(
         message="Document ingested successfully.",

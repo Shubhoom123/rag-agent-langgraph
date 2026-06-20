@@ -45,6 +45,7 @@ def _build_agent():
         web_search_needed: bool
         history: List[dict]
         token_usage: Optional[dict]
+        user_id: Optional[str]
 
     def rewrite_query(state: GraphState):
         logger.info("Node: rewrite_query")
@@ -79,8 +80,12 @@ def _build_agent():
         logger.info("Node: retrieve")
         query = state.get("rewritten_question") or state["question"]
         fetch_k = max(settings.top_k_documents, 3)
-        docs = vectorstore.similarity_search(query, k=fetch_k)
-        logger.info(f"Retrieved {len(docs)} candidate docs")
+        user_id = state.get("user_id")
+        if user_id:
+            docs = vectorstore.similarity_search(query, k=fetch_k, namespace=user_id)
+        else:
+            docs = vectorstore.similarity_search(query, k=fetch_k)
+        logger.info(f"Retrieved {len(docs)} candidate docs from namespace={user_id!r}")
         return {"documents": docs}
 
     def grade_documents(state: GraphState):
@@ -280,6 +285,7 @@ async def query(
         "web_search_needed": False,
         "history": [m.model_dump() for m in body.history],
         "token_usage": None,
+        "user_id": body.user_id or user.uid,
     }
 
     try:
@@ -346,6 +352,7 @@ async def query_stream(
             "web_search_needed": False,
             "history": [],
             "token_usage": None,
+            "user_id": user.uid,
         }
 
         try:

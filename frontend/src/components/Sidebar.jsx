@@ -321,7 +321,7 @@ export default function Sidebar({ user, status, setStatus, chats, activeChatId, 
 
         {showUpload && (
           <div className="animate-fade">
-            <FileUpload />
+            <FileUpload user={user} />
           </div>
         )}
 
@@ -332,7 +332,6 @@ export default function Sidebar({ user, status, setStatus, chats, activeChatId, 
           justifyContent: "space-between",
           padding: "4px 2px 0",
         }}>
-          {/* Clickable user info area */}
           <div
             onClick={onOpenProfile}
             style={{
@@ -415,7 +414,6 @@ export default function Sidebar({ user, status, setStatus, chats, activeChatId, 
             </div>
           </div>
 
-          {/* Sign out button */}
           <button
             onClick={logOut}
             title="Sign out"

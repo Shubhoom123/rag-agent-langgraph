@@ -5,9 +5,8 @@ Using Pydantic v2 for validation.
 from typing import List, Optional
 from pydantic import BaseModel, Field
 
-# /api/query
 class ChatMessage(BaseModel):
-    role: str   # "user" or "assistant"
+    role: str
     text: str
 
 class QueryRequest(BaseModel):
@@ -24,6 +23,10 @@ class QueryRequest(BaseModel):
     session_id: Optional[str] = Field(
         default=None,
         description="Optional session ID",
+    )
+    user_id: Optional[str] = Field(
+        default=None,
+        description="User ID for namespace isolation",
     )
     model_config = {
         "json_schema_extra": {"example": {"question": "What is LangGraph?"}}
@@ -46,13 +49,11 @@ class QueryResponse(BaseModel):
     session_id: Optional[str] = None
     token_usage: Optional[TokenUsage] = None
 
-# /api/ingest
 class IngestResponse(BaseModel):
     message: str
     chunks_added: int
     filename: str
 
-# /api/health
 class HealthResponse(BaseModel):
     status: str
     llm_provider: str
