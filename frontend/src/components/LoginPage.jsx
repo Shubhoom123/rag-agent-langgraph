@@ -58,7 +58,7 @@ export default function LoginPage() {
             width: 80,
             height: 80,
             borderRadius: "50%",
-            background: "radial-gradient(circle at center, rgba(74,222,128,0.18) 0%, rgba(74,222,128,0.06) 55%, transparent 75%)",
+            background: "transparent",
             boxShadow: "0 0 60px 20px rgba(74,222,128,0.12), 0 0 120px 50px rgba(74,222,128,0.05)",
             display: "flex",
             alignItems: "center",
@@ -69,8 +69,8 @@ export default function LoginPage() {
               src="/dragon-favicon.svg"
               alt="d-RAG-on logo"
               style={{
-                width: 40,
-                height: 40,
+                width: 60,
+                height: 60,
                 objectFit: "contain",
               }}
             />
