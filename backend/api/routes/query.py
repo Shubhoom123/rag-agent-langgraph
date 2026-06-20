@@ -23,23 +23,16 @@ router = APIRouter()
 
 @lru_cache(maxsize=1)
 def _get_cached_agent():
-    """Build LangGraph agent once and cache it."""
     return _build_agent()
 
 
 def _build_agent():
     from langgraph.graph import StateGraph, END
     from langchain_core.documents import Document
-    from langchain_text_splitters import RecursiveCharacterTextSplitter
     from typing import TypedDict, List
 
     llm = get_llm()
     vectorstore = get_vectorstore()
-
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=800,
-        chunk_overlap=100,
-    )
 
     class GraphState(TypedDict):
         question: str
@@ -135,77 +128,33 @@ def _build_agent():
         }
 
     def web_search_node(state: GraphState):
-        logger.info("Node: web_search")
+        logger.info("Node: web_search (Tavily)")
         retries = state.get("retries", 0) + 1
         query = state.get("rewritten_question") or state["question"]
         temp_docs = []
 
         try:
-            import wikipedia
-            import time
-
-            wikipedia.set_user_agent(
-                "RAGAgent/1.0 (educational project; contact via github)"
+            from tavily import TavilyClient
+            client = TavilyClient(api_key=settings.tavily_api_key)
+            response = client.search(
+                query=query,
+                max_results=3,
+                search_depth="basic",
             )
-
-            search_results = wikipedia.search(query, results=1)
-            wiki_docs = []
-
-            for title in search_results[:1]:
-                try:
-                    page = wikipedia.page(title, auto_suggest=False)
-                    wiki_docs.append(
-                        Document(
-                            page_content=page.content[:500],
-                            metadata={
-                                "source": f"wikipedia:{title}",
-                                "url": page.url,
-                                "temporary": True,
-                            }
-                        )
+            for result in response.get("results", []):
+                temp_docs.append(
+                    Document(
+                        page_content=result.get("content", ""),
+                        metadata={
+                            "source": result.get("url", "tavily"),
+                            "title": result.get("title", ""),
+                            "temporary": True,
+                        }
                     )
-                    time.sleep(0.5)
-                except wikipedia.DisambiguationError as e:
-                    try:
-                        page = wikipedia.page(e.options[0], auto_suggest=False)
-                        wiki_docs.append(
-                            Document(
-                                page_content=page.content[:500],
-                                metadata={
-                                    "source": f"wikipedia:{e.options[0]}",
-                                    "temporary": True,
-                                }
-                            )
-                        )
-                    except Exception:
-                        pass
-                except Exception as wiki_err:
-                    logger.warning(f"Wikipedia page error: {wiki_err}")
-                    continue
-
-            if wiki_docs:
-                chunks = splitter.split_documents(wiki_docs)
-                temp_docs.extend(chunks)
-                logger.info(f"Wikipedia fetched {len(chunks)} chunks")
-
-        except Exception as e:
-            logger.warning(f"Wikipedia search failed: {e}")
-
-        try:
-            from ddgs import DDGS
-            with DDGS() as ddgs:
-                results = list(ddgs.text(query, max_results=1))
-            ddg_docs = [
-                Document(
-                    page_content=f"{r['title']}\n\n{r['body']}",
-                    metadata={"source": "duckduckgo", "temporary": True}
                 )
-                for r in results
-            ]
-            temp_docs.extend(ddg_docs)
-            logger.info(f"DuckDuckGo fetched {len(ddg_docs)} docs")
+            logger.info(f"Tavily fetched {len(temp_docs)} results")
         except Exception as e:
-            logger.warning(f"DuckDuckGo failed: {e}")
+            logger.warning(f"Tavily search failed: {e}")
 
         existing_docs = state.get("documents", [])
         all_docs = existing_docs + temp_docs

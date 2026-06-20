@@ -26,7 +26,7 @@ langchain-chroma
 chromadb
 
 # Web search
-ddgs
+tavily-python
 
 # PDF support
 pypdf
@@ -34,11 +34,11 @@ pypdf
 # HTTP client for health checks
 httpx
 
-#slowapi
+# Rate limiting
 slowapi
 
-#wikipedia
-wikipedia
-
+# Pinecone
 pinecone
+
+# Firebase
 firebase-admin
