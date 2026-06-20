@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { Send, MoreHorizontal } from "lucide-react";
 import { saveUsageStats } from "../firebase";
-
 import Message from "./Message";
+
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 export default function ChatWindow({ user, messages, setMessages, loading, setLoading }) {
@@ -40,7 +40,7 @@ export default function ChatWindow({ user, messages, setMessages, loading, setLo
       const res = await fetch(`${API_URL}/api/query`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question, history }),
+        body: JSON.stringify({ question, history, user_id: user?.uid }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -52,7 +52,6 @@ export default function ChatWindow({ user, messages, setMessages, loading, setLo
           retries: data.retries,
         }]);
 
-        // Track usage in Firestore
         if (user?.uid && data.token_usage) {
           saveUsageStats(user.uid, {
             tokens: data.token_usage.total_tokens,
@@ -292,7 +291,6 @@ function EmptyState({ onSuggest }) {
       gap: 28,
       padding: 48,
     }}>
-      {/* Gemini-style central glow orb */}
       <div style={{
         width: 72,
         height: 72,

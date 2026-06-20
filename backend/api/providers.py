@@ -10,6 +10,7 @@ from api.config import settings
 
 logger = logging.getLogger(__name__)
 
+
 @lru_cache(maxsize=1)
 def get_llm() -> BaseLanguageModel:
     """Cached LLM — initialized once, reused across requests."""
@@ -36,16 +37,9 @@ def get_llm() -> BaseLanguageModel:
 
 @lru_cache
 def get_embeddings():
-    """
-    Cached embeddings.
-    Uses Pinecone inference if use_pinecone_inference=true (zero local memory).
-    Falls back to HuggingFace local model otherwise.
-    """
     if settings.use_pinecone_inference:
-        # Return None — Pinecone inference handles embeddings server-side
         logger.info("Using Pinecone inference for embeddings (no local model)")
         return None
-
     from langchain_huggingface import HuggingFaceEmbeddings
     logger.info(f"Loading local embeddings: {settings.embedding_model}")
     return HuggingFaceEmbeddings(model_name=settings.embedding_model)
@@ -54,14 +48,14 @@ def get_embeddings():
 class PineconeInferenceWrapper(VectorStore):
     """
     Vector store using Pinecone's server-side inference API.
-    No local embedding model needed — zero memory cost.
+    Supports per-user namespacing for document isolation.
     """
     def __init__(self, index, model: str, text_key: str = "text"):
         self._index = index
         self._model = model
         self._text_key = text_key
 
-    def similarity_search(self, query: str, k: int = 4, **kwargs):
+    def similarity_search(self, query: str, k: int = 4, namespace: str = None, **kwargs):
         from langchain_core.documents import Document
         from pinecone import Pinecone
         pc = Pinecone(api_key=settings.pinecone_api_key)
@@ -71,7 +65,10 @@ class PineconeInferenceWrapper(VectorStore):
             parameters={"input_type": "query", "truncate": "END"},
         )
         vector = result[0].values
-        results = self._index.query(vector=vector, top_k=k, include_metadata=True)
+        query_kwargs = {"vector": vector, "top_k": k, "include_metadata": True}
+        if namespace:
+            query_kwargs["namespace"] = namespace
+        results = self._index.query(**query_kwargs)
         docs = []
         for match in results.get("matches", []):
             meta = match.get("metadata", {})
@@ -79,7 +76,7 @@ class PineconeInferenceWrapper(VectorStore):
             docs.append(Document(page_content=text, metadata=meta))
         return docs
 
-    def add_documents(self, documents, **kwargs):
+    def add_documents(self, documents, namespace: str = None, **kwargs):
         import uuid
         from pinecone import Pinecone
         pc = Pinecone(api_key=settings.pinecone_api_key)
@@ -101,8 +98,14 @@ class PineconeInferenceWrapper(VectorStore):
             }
             for i in range(len(documents))
         ]
+        upsert_kwargs = {}
+        if namespace:
+            upsert_kwargs["namespace"] = namespace
         for batch_start in range(0, len(records), 100):
-            self._index.upsert(vectors=records[batch_start:batch_start + 100])
+            self._index.upsert(
+                vectors=records[batch_start:batch_start + 100],
+                **upsert_kwargs
+            )
         return [r["id"] for r in records]
 
     @classmethod
@@ -166,13 +169,12 @@ def get_vectorstore() -> VectorStore:
         existing = [i.name for i in pc.list_indexes()]
 
         if settings.use_pinecone_inference:
-            # Pinecone inference — no local embeddings needed
             index_name = settings.pinecone_index_name
             if index_name not in existing:
                 logger.info(f"Creating Pinecone index with inference: {index_name}")
                 pc.create_index(
                     name=index_name,
-                    dimension=1024,  # multilingual-e5-large dimension
+                    dimension=1024,
                     metric="cosine",
                     spec=ServerlessSpec(cloud="aws", region="us-east-1"),
                 )
@@ -183,7 +185,6 @@ def get_vectorstore() -> VectorStore:
                 model=settings.pinecone_inference_model,
             )
 
-        # Local embeddings fallback
         embeddings = get_embeddings()
         if settings.pinecone_index_name not in existing:
             logger.info(f"Creating Pinecone index: {settings.pinecone_index_name}")
@@ -197,7 +198,6 @@ def get_vectorstore() -> VectorStore:
         logger.info(f"Using Pinecone index: {settings.pinecone_index_name}")
         return PineconeVectorStoreWrapper(index=index, embeddings=embeddings)
 
-    # Chroma fallback
     embeddings = get_embeddings()
     from langchain_chroma import Chroma
     logger.info(f"Using Chroma at: {settings.chroma_persist_dir}")
