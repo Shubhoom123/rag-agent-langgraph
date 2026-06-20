@@ -66,7 +66,7 @@ export default function LoginPage() {
             animation: "glowPulse 3s ease-in-out infinite",
           }}>
             <img
-              src="/favicon-32x32.png"
+              src="/dragon-favicon"
               alt="d-RAG-on logo"
               style={{
                 width: 40,
