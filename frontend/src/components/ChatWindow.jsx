@@ -5,7 +5,7 @@ import { saveUsageStats } from "../firebase";
 import Message from "./Message";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
-export default function ChatWindow({ messages, setMessages, loading, setLoading }) {
+export default function ChatWindow({ user, messages, setMessages, loading, setLoading }) {
   const [input, setInput] = useState("");
   const [inputFocused, setInputFocused] = useState(false);
   const bottomRef = useRef();
