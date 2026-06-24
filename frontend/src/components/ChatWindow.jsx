@@ -37,9 +37,13 @@ export default function ChatWindow({ user, messages, setMessages, loading, setLo
       .map((m) => ({ role: m.role, text: m.text }));
 
     try {
+      const token = await user.getIdToken();
       const res = await fetch(`${API_URL}/api/query`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`, // ← add this line
+        },
         body: JSON.stringify({ question, history, user_id: user?.uid }),
       });
       const data = await res.json();
