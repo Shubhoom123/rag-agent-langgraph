@@ -86,7 +86,6 @@ export default function Message({ message }) {
         width: "100%",
       }}
     >
-      {/* Avatar orb */}
       <div style={{
         width: 34,
         height: 34,
@@ -116,8 +115,7 @@ export default function Message({ message }) {
         gap: 8,
         paddingTop: 4,
       }}>
-        {/* Answer — rendered as markdown */}
-        <div className="markdown-body" style={{
+        <div style={{
           fontSize: "0.9rem",
           lineHeight: 1.75,
           color: "var(--text)",
@@ -153,9 +151,10 @@ export default function Message({ message }) {
               li: ({ children }) => (
                 <li style={{ margin: "3px 0", color: "var(--text-secondary)" }}>{children}</li>
               ),
-              code: ({ inline, children }) => (
-                inline
-                  ? <code style={{
+              code: ({ inline, children }) => {
+                if (inline) {
+                  return (
+                    <code style={{
                       background: "var(--surface-2)",
                       border: "1px solid var(--border)",
                       borderRadius: 4,
@@ -164,31 +163,37 @@ export default function Message({ message }) {
                       fontSize: "0.8rem",
                       color: "var(--accent)",
                     }}>{children}</code>
-                  : <pre style={{
-                      background: "var(--surface)",
-                      border: "1px solid var(--border)",
-                      borderRadius: "var(--radius)",
-                      padding: "12px 16px",
-                      overflowX: "auto",
-                      margin: "8px 0",
-                    }}>
-                      <code style={{
-                        fontFamily: "var(--mono)",
-                        fontSize: "0.8rem",
-                        color: "var(--text)",
-                      }}>{children}</code>
-                    </pre>
-              ),
-              a: ({ href, children }) => (
-                
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ color: "var(--accent)", textDecoration: "underline" }}
-                >
-                  {children}
-                </a>
-              ),
+                  );
+                }
+                return (
+                  <pre style={{
+                    background: "var(--surface)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "var(--radius)",
+                    padding: "12px 16px",
+                    overflowX: "auto",
+                    margin: "8px 0",
+                  }}>
+                    <code style={{
+                      fontFamily: "var(--mono)",
+                      fontSize: "0.8rem",
+                      color: "var(--text)",
+                    }}>{children}</code>
+                  </pre>
+                );
+              },
+              a: ({ href, children }) => {
+                return (
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: "var(--accent)", textDecoration: "underline" }}
+                  >
+                    {children}
+                  </a>
+                );
+              },
               blockquote: ({ children }) => (
                 <blockquote style={{
                   borderLeft: "3px solid var(--accent)",
@@ -207,7 +212,6 @@ export default function Message({ message }) {
           </ReactMarkdown>
         </div>
 
-        {/* Action buttons */}
         <div style={{
           display: "flex",
           alignItems: "center",
@@ -220,7 +224,6 @@ export default function Message({ message }) {
             <ActionButton icon={<ThumbsUp size={11} />} label="Good" />
             <ActionButton icon={<ThumbsDown size={11} />} label="Bad" />
           </div>
-
           <div style={{ display: "flex", gap: 6 }}>
             {message.webSearchUsed && (
               <Badge icon={<Globe size={9} />} label="Web search" color="var(--accent)" bg="var(--accent-dim)" border="rgba(74,222,128,0.15)" />
@@ -231,7 +234,6 @@ export default function Message({ message }) {
           </div>
         </div>
 
-        {/* Sources */}
         {message.sources?.length > 0 && (
           <div style={{
             border: "1px solid var(--border)",
@@ -294,7 +296,9 @@ export default function Message({ message }) {
                       [{i + 1}]
                     </span>
                     {src.content.slice(0, 300)}
-                    {src.content.length > 300 && <span style={{ color: "var(--text-muted)" }}>…</span>}
+                    {src.content.length > 300 && (
+                      <span style={{ color: "var(--text-muted)" }}>…</span>
+                    )}
                   </div>
                 ))}
               </div>
