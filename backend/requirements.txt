@@ -32,4 +32,4 @@ httpx
 slowapi
 
 # Firebase
-firebase-admin
+firebase-admindatasets
