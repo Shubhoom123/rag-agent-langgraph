@@ -3,7 +3,7 @@ Security middleware.
 
 - Rate limiting via slowapi
 - Security headers
-- Request size limiting
+- Request size limiting (25MB)
 - Basic prompt injection detection
 - Security event logging
 - Request ID tracking
@@ -18,6 +18,7 @@ import uuid
 from typing import Callable
 
 from fastapi import Request, Response, HTTPException, status
+from fastapi.responses import JSONResponse
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
@@ -54,20 +55,24 @@ app_logger = logging.getLogger(__name__)
 limiter = Limiter(key_func=get_remote_address)
 
 # Request size limit
-MAX_BODY_SIZE = 1 * 1024 * 1024  # 1MB
+MAX_BODY_SIZE = 25 * 1024 * 1024  # 25MB
 
 
 async def limit_request_size(request: Request, call_next: Callable) -> Response:
-    """Reject requests with bodies larger than MAX_BODY_SIZE."""
+    """
+    Reject requests with bodies larger than MAX_BODY_SIZE.
+    Returns JSONResponse instead of raising HTTPException —
+    raising inside middleware causes an unhandled ASGI crash.
+    """
     content_length = request.headers.get("content-length")
     if content_length and int(content_length) > MAX_BODY_SIZE:
         security_logger.warning(
             f"OVERSIZED_REQUEST | ip={request.client.host} | "
             f"path={request.url.path} | size={content_length}"
         )
-        raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="Request body too large. Maximum size is 1MB.",
+        return JSONResponse(
+            status_code=413,
+            content={"detail": "File too large. Maximum size is 25MB."},
         )
     return await call_next(request)
 
@@ -149,15 +154,17 @@ def verify_api_key(request: Request) -> None:
             detail="Invalid API key.",
         )
 
+
+# ---------------------------------------------------------------------------
 # Filename sanitization
 # Prevents path traversal attacks like ../../etc/passwd
+# ---------------------------------------------------------------------------
 SAFE_FILENAME_RE = re.compile(r"^[\w\-. ]+$")
 
 
 def sanitize_filename(filename: str) -> str:
     """
     Sanitize uploaded filename to prevent path traversal attacks.
-
     Raises HTTPException if filename is unsafe.
     """
     if not filename or filename.strip() == "":
@@ -199,7 +206,10 @@ def sanitize_filename(filename: str) -> str:
 
     return basename
 
+
+# ---------------------------------------------------------------------------
 # Prompt injection detection
+# ---------------------------------------------------------------------------
 INJECTION_PATTERNS = [
     r"ignore\s+(all\s+)?(previous|prior|above)\s+instructions",
     r"disregard\s+(all\s+)?(previous|prior|above)\s+instructions",
@@ -215,6 +225,7 @@ INJECTION_PATTERNS = [
 COMPILED_PATTERNS = [
     re.compile(p, re.IGNORECASE) for p in INJECTION_PATTERNS
 ]
+
 
 def sanitize_question(question: str) -> str:
     """

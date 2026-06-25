@@ -22,7 +22,7 @@ from api.providers import get_vectorstore
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-MAX_FILE_SIZE_MB = 10
+MAX_FILE_SIZE_MB = 25
 MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
 
 splitter = RecursiveCharacterTextSplitter(
