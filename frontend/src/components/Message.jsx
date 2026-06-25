@@ -151,35 +151,36 @@ export default function Message({ message }) {
               li: ({ children }) => (
                 <li style={{ margin: "3px 0", color: "var(--text-secondary)" }}>{children}</li>
               ),
-              code: ({ inline, children }) => {
-                if (inline) {
+              code: ({ node, className, children, ...props }) => {
+                const isBlock = className?.startsWith("language-");
+                if (isBlock) {
                   return (
-                    <code style={{
-                      background: "var(--surface-2)",
+                    <pre style={{
+                      background: "var(--surface)",
                       border: "1px solid var(--border)",
-                      borderRadius: 4,
-                      padding: "1px 6px",
-                      fontFamily: "var(--mono)",
-                      fontSize: "0.8rem",
-                      color: "var(--accent)",
-                    }}>{children}</code>
+                      borderRadius: "var(--radius)",
+                      padding: "12px 16px",
+                      overflowX: "auto",
+                      margin: "8px 0",
+                    }}>
+                      <code style={{
+                        fontFamily: "var(--mono)",
+                        fontSize: "0.8rem",
+                        color: "var(--text)",
+                      }}>{children}</code>
+                    </pre>
                   );
                 }
                 return (
-                  <pre style={{
-                    background: "var(--surface)",
+                  <code style={{
+                    background: "var(--surface-2)",
                     border: "1px solid var(--border)",
-                    borderRadius: "var(--radius)",
-                    padding: "12px 16px",
-                    overflowX: "auto",
-                    margin: "8px 0",
-                  }}>
-                    <code style={{
-                      fontFamily: "var(--mono)",
-                      fontSize: "0.8rem",
-                      color: "var(--text)",
-                    }}>{children}</code>
-                  </pre>
+                    borderRadius: 4,
+                    padding: "1px 6px",
+                    fontFamily: "var(--mono)",
+                    fontSize: "0.8rem",
+                    color: "var(--accent)",
+                  }}>{children}</code>
                 );
               },
               a: ({ href, children }) => {

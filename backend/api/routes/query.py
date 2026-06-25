@@ -56,12 +56,21 @@ def _build_agent():
             return {"rewritten_question": question}
 
         prompt = (
-            f"Rewrite the following question as a concise search query "
-            f"that preserves the original meaning and key entities. "
-            f"Keep proper nouns, names, and specific terms exactly as they are. "
-            f"Max 12 words.\n\n"
-            f"Question: {question}\n"
-            f"Search query:"
+            f"{'Conversation history:' + chr(10) + history_text + chr(10) + chr(10) if history_text else ''}"
+            f"Context:\n{context}\n\n"
+            f"Current question: {state['question']}\n\n"
+            f"Answer the question using ONLY the context provided above. "
+            f"Do not use any outside knowledge. "
+            f"If the context does not contain enough information to answer, "
+            f"say 'I don't have enough information in my knowledge base to answer this.' "
+            f"If the question refers to something from the conversation history, "
+            f"use that to understand what is being asked. "
+            f"Never say 'based on my knowledge' or 'based on the context' — just answer directly. "
+            f"Format your response using markdown. "
+            f"Always wrap code in fenced code blocks with the language name, for example:\n"
+            f"```python\ncode here\n```\n"
+            f"Use **bold** for important terms, and bullet points for lists.\n\n"
+            f"Answer:"
         )
 
         response = llm.invoke(prompt)
