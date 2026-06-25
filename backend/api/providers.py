@@ -55,9 +55,16 @@ class PineconeInferenceWrapper(VectorStore):
         self._model = model
         self._text_key = text_key
 
-    def similarity_search(self, query: str, k: int = 4, namespace: str = None, **kwargs):
+    def similarity_search(
+        self,
+        query: str,
+        k: int = 4,
+        namespace: str = None,
+        **kwargs,
+    ):
         from langchain_core.documents import Document
         from pinecone import Pinecone
+
         pc = Pinecone(api_key=settings.pinecone_api_key)
         result = pc.inference.embed(
             model=self._model,
@@ -65,9 +72,18 @@ class PineconeInferenceWrapper(VectorStore):
             parameters={"input_type": "query", "truncate": "END"},
         )
         vector = result[0].values
-        query_kwargs = {"vector": vector, "top_k": k, "include_metadata": True}
-        if namespace:
+
+        query_kwargs = {
+            "vector": vector,
+            "top_k": k,
+            "include_metadata": True,
+        }
+        # Only pass namespace if explicitly provided
+        # None  → Pinecone searches default namespace (shared knowledge base)
+        # str   → Pinecone searches that user's private namespace
+        if namespace is not None:
             query_kwargs["namespace"] = namespace
+
         results = self._index.query(**query_kwargs)
         docs = []
         for match in results.get("matches", []):
@@ -76,9 +92,15 @@ class PineconeInferenceWrapper(VectorStore):
             docs.append(Document(page_content=text, metadata=meta))
         return docs
 
-    def add_documents(self, documents, namespace: str = None, **kwargs):
+    def add_documents(
+        self,
+        documents,
+        namespace: str = None,
+        **kwargs,
+    ):
         import uuid
         from pinecone import Pinecone
+
         pc = Pinecone(api_key=settings.pinecone_api_key)
         texts = [d.page_content for d in documents]
         result = pc.inference.embed(
@@ -98,13 +120,15 @@ class PineconeInferenceWrapper(VectorStore):
             }
             for i in range(len(documents))
         ]
+
         upsert_kwargs = {}
-        if namespace:
+        if namespace is not None:
             upsert_kwargs["namespace"] = namespace
+
         for batch_start in range(0, len(records), 100):
             self._index.upsert(
                 vectors=records[batch_start:batch_start + 100],
-                **upsert_kwargs
+                **upsert_kwargs,
             )
         return [r["id"] for r in records]
 
@@ -114,16 +138,37 @@ class PineconeInferenceWrapper(VectorStore):
 
 
 class PineconeVectorStoreWrapper(VectorStore):
-    """Original wrapper using local embeddings."""
-    def __init__(self, index, embeddings, text_key="text"):
+    """
+    Vector store wrapper using local HuggingFace embeddings.
+    Supports per-user namespacing for document isolation.
+    """
+    def __init__(self, index, embeddings, text_key: str = "text"):
         self._index = index
         self._embeddings = embeddings
         self._text_key = text_key
 
-    def similarity_search(self, query: str, k: int = 4, **kwargs):
+    def similarity_search(
+        self,
+        query: str,
+        k: int = 4,
+        namespace: str = None,  # ✅ was missing — caused namespace to be ignored
+        **kwargs,
+    ):
         from langchain_core.documents import Document
+
         vector = self._embeddings.embed_query(query)
-        results = self._index.query(vector=vector, top_k=k, include_metadata=True)
+
+        query_kwargs = {
+            "vector": vector,
+            "top_k": k,
+            "include_metadata": True,
+        }
+        # None  → default namespace (shared/seeded knowledge base)
+        # str   → user's private namespace (their uploaded docs)
+        if namespace is not None:
+            query_kwargs["namespace"] = namespace
+
+        results = self._index.query(**query_kwargs)
         docs = []
         for match in results.get("matches", []):
             meta = match.get("metadata", {})
@@ -131,8 +176,14 @@ class PineconeVectorStoreWrapper(VectorStore):
             docs.append(Document(page_content=text, metadata=meta))
         return docs
 
-    def add_documents(self, documents, **kwargs):
+    def add_documents(
+        self,
+        documents,
+        namespace: str = None,  # ✅ was missing — uploads went to wrong namespace
+        **kwargs,
+    ):
         import uuid
+
         texts = [d.page_content for d in documents]
         vectors = self._embeddings.embed_documents(texts)
         records = [
@@ -146,8 +197,16 @@ class PineconeVectorStoreWrapper(VectorStore):
             }
             for i in range(len(documents))
         ]
+
+        upsert_kwargs = {}
+        if namespace is not None:
+            upsert_kwargs["namespace"] = namespace
+
         for batch_start in range(0, len(records), 100):
-            self._index.upsert(vectors=records[batch_start:batch_start + 100])
+            self._index.upsert(
+                vectors=records[batch_start:batch_start + 100],
+                **upsert_kwargs,
+            )
         return [r["id"] for r in records]
 
     @classmethod

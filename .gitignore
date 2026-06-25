@@ -27,3 +27,4 @@ frontend/.env.production
 .history/
 .history/
 apis.txt
+backend/scripts/.seeded_topics.json

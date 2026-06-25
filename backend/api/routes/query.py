@@ -81,11 +81,23 @@ def _build_agent():
         query = state.get("rewritten_question") or state["question"]
         fetch_k = max(settings.top_k_documents, 3)
         user_id = state.get("user_id")
+
+        # 1. Search user's private docs
+        private_docs = []
         if user_id:
-            docs = vectorstore.similarity_search(query, k=fetch_k, namespace=user_id)
-        else:
-            docs = vectorstore.similarity_search(query, k=fetch_k)
-        logger.info(f"Retrieved {len(docs)} candidate docs from namespace={user_id!r}")
+            private_docs = vectorstore.similarity_search(
+                query, k=fetch_k, namespace=user_id
+            )
+            logger.info(f"Private docs: {len(private_docs)} from namespace={user_id!r}")
+
+        # 2. Search shared knowledge base
+        shared_docs = vectorstore.similarity_search(query, k=fetch_k)
+        logger.info(f"Shared docs: {len(shared_docs)} from default namespace")
+
+        # 3. Private docs take priority, shared fills the rest
+        docs = (private_docs + shared_docs)[:fetch_k * 2]
+
+        logger.info(f"Total docs for generation: {len(docs)}")
         return {"documents": docs}
 
     def grade_documents(state: GraphState):
