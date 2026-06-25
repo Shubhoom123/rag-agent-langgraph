@@ -82,7 +82,7 @@ rag-agent-langgraph/
 
 ## Deployment
 
-**Backend → Railway**
+**Backend → Render**
 
 **Frontend → Vercel**
 
