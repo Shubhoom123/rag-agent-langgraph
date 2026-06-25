@@ -2,6 +2,8 @@ import { useState, useRef } from "react";
 import { Upload, CheckCircle, AlertCircle, Loader } from "lucide-react";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const MAX_FILE_SIZE_MB = 25;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 export default function FileUpload({ user }) {
   const [state, setState] = useState("idle");
@@ -10,28 +12,47 @@ export default function FileUpload({ user }) {
 
   async function handleFile(file) {
     if (!file) return;
+
+    // File type check
     const isValid = file.name.endsWith(".txt") || file.name.endsWith(".pdf");
     if (!isValid) {
       setState("error");
       setMessage("Only .txt and .pdf files are supported.");
       return;
     }
+
+    // Client-side size check — instant feedback, no wasted upload
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      setState("error");
+      setMessage(`File too large. Maximum size is ${MAX_FILE_SIZE_MB}MB.`);
+      return;
+    }
+
     setState("uploading");
     setMessage("");
+
     const formData = new FormData();
     formData.append("file", file);
     if (user?.uid) {
       formData.append("user_id", user.uid);
     }
-    try {
+
+    try{
+      const token = user ? await user.getIdToken() : null;
+
       const res = await fetch(`${API_URL}/api/ingest`, {
         method: "POST",
+        headers: {
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
         body: formData,
       });
+
       const data = await res.json();
+
       if (res.ok) {
         setState("success");
-        setMessage(`Added ${data.chunks_added} chunks from ${data.filename}`);
+        setMessage(`✓ Added ${data.chunks_added} chunks from "${data.filename}"`);
         setTimeout(() => setState("idle"), 4000);
       } else {
         setState("error");
@@ -90,8 +111,9 @@ export default function FileUpload({ user }) {
           fontSize: 11,
           color: "var(--text-muted)",
           lineHeight: 1.5,
+          whiteSpace: "pre-line",
         }}>
-          {state === "idle" && "Click or drop a file\n.txt or .pdf · max 10MB"}
+          {state === "idle" && `Click or drop a file\n.txt or .pdf · max ${MAX_FILE_SIZE_MB}MB`}
           {state === "uploading" && "Uploading..."}
           {state === "success" && message}
           {state === "error" && message}
