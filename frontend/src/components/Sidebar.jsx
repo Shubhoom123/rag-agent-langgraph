@@ -11,10 +11,20 @@ export default function Sidebar({ user, status, setStatus, chats, activeChatId, 
   const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
-    fetch(`${API_URL}/api/health`)
-      .then((r) => r.json())
-      .then(setStatus)
-      .catch(() => setStatus(null));
+    const checkHealth = () => {
+      fetch(`${API_URL}/api/health`)
+        .then((r) => r.json())
+        .then(setStatus)
+        .catch(() => {
+          setTimeout(() => {
+            fetch(`${API_URL}/api/health`)
+              .then((r) => r.json())
+              .then(setStatus)
+              .catch(() => setStatus(null));
+          }, 3000);
+        });
+    };
+    checkHealth();
   }, []);
 
   const allOk = status?.llm_reachable && status?.vector_store_reachable;
