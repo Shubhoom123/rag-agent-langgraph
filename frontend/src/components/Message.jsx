@@ -1,4 +1,5 @@
 import { useState } from "react";
+import ReactMarkdown from "react-markdown";
 import { Globe, ChevronDown, ChevronUp, AlertCircle, Copy, ThumbsUp, ThumbsDown } from "lucide-react";
 
 export default function Message({ message }) {
@@ -115,16 +116,95 @@ export default function Message({ message }) {
         gap: 8,
         paddingTop: 4,
       }}>
-        {/* Answer */}
-        <div style={{
+        {/* Answer — rendered as markdown */}
+        <div className="markdown-body" style={{
           fontSize: "0.9rem",
           lineHeight: 1.75,
           color: "var(--text)",
           fontFamily: "var(--sans)",
-          whiteSpace: "pre-wrap",
           wordBreak: "break-word",
         }}>
-          {message.text}
+          <ReactMarkdown
+            components={{
+              p: ({ children }) => (
+                <p style={{ margin: "0 0 10px 0" }}>{children}</p>
+              ),
+              strong: ({ children }) => (
+                <strong style={{ color: "var(--text)", fontWeight: 600 }}>{children}</strong>
+              ),
+              em: ({ children }) => (
+                <em style={{ color: "var(--text-secondary)" }}>{children}</em>
+              ),
+              h1: ({ children }) => (
+                <h1 style={{ fontSize: "1.1rem", fontWeight: 600, margin: "12px 0 6px", color: "var(--text)" }}>{children}</h1>
+              ),
+              h2: ({ children }) => (
+                <h2 style={{ fontSize: "1rem", fontWeight: 600, margin: "10px 0 6px", color: "var(--text)" }}>{children}</h2>
+              ),
+              h3: ({ children }) => (
+                <h3 style={{ fontSize: "0.95rem", fontWeight: 600, margin: "8px 0 4px", color: "var(--text)" }}>{children}</h3>
+              ),
+              ul: ({ children }) => (
+                <ul style={{ margin: "6px 0", paddingLeft: 20 }}>{children}</ul>
+              ),
+              ol: ({ children }) => (
+                <ol style={{ margin: "6px 0", paddingLeft: 20 }}>{children}</ol>
+              ),
+              li: ({ children }) => (
+                <li style={{ margin: "3px 0", color: "var(--text-secondary)" }}>{children}</li>
+              ),
+              code: ({ inline, children }) => (
+                inline
+                  ? <code style={{
+                      background: "var(--surface-2)",
+                      border: "1px solid var(--border)",
+                      borderRadius: 4,
+                      padding: "1px 6px",
+                      fontFamily: "var(--mono)",
+                      fontSize: "0.8rem",
+                      color: "var(--accent)",
+                    }}>{children}</code>
+                  : <pre style={{
+                      background: "var(--surface)",
+                      border: "1px solid var(--border)",
+                      borderRadius: "var(--radius)",
+                      padding: "12px 16px",
+                      overflowX: "auto",
+                      margin: "8px 0",
+                    }}>
+                      <code style={{
+                        fontFamily: "var(--mono)",
+                        fontSize: "0.8rem",
+                        color: "var(--text)",
+                      }}>{children}</code>
+                    </pre>
+              ),
+              a: ({ href, children }) => (
+                
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: "var(--accent)", textDecoration: "underline" }}
+                >
+                  {children}
+                </a>
+              ),
+              blockquote: ({ children }) => (
+                <blockquote style={{
+                  borderLeft: "3px solid var(--accent)",
+                  paddingLeft: 12,
+                  margin: "8px 0",
+                  color: "var(--text-secondary)",
+                  fontStyle: "italic",
+                }}>{children}</blockquote>
+              ),
+              hr: () => (
+                <hr style={{ border: "none", borderTop: "1px solid var(--border)", margin: "12px 0" }} />
+              ),
+            }}
+          >
+            {message.text}
+          </ReactMarkdown>
         </div>
 
         {/* Action buttons */}
