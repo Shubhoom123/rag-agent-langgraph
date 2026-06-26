@@ -28,3 +28,5 @@ frontend/.env.production
 .history/
 apis.txt
 backend/scripts/.seeded_topics.json
+
+d-RAG-on_Technical_Report.pdf
