@@ -12,7 +12,7 @@ A production-grade self-correcting RAG system built with LangGraph, FastAPI, and
 |---|---|
 | Frontend | React + Vite on Vercel |
 | Backend | Python on Railway |
-| LLM | Groq (llama-3.1-8b-instant) |
+| LLM | Groq (GPT OSS 120B) |
 | Vector DB | Pinecone (prod) / ChromaDB (dev) |
 | Embeddings | sentence-transformers/all-MiniLM-L6-v2 |
 | Agent Framework | LangGraph + LangChain |

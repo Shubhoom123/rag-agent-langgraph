@@ -141,7 +141,7 @@ export default function ChatWindow({ user, messages, setMessages, loading, setLo
               color: "var(--text-secondary)",
               letterSpacing: "0.04em",
             }}>
-              llama-3.1-8b
+              openai/gpt-oss-20b
             </span>
           </div>
 

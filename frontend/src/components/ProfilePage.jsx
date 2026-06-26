@@ -226,7 +226,7 @@ export default function ProfilePage({ user, chats, onClose }) {
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {[
                     { label: "Last active", value: formatDate(profile?.lastActiveAt || profile?.lastLoginAt) },
-                    { label: "Model", value: "llama-3.1-8b" },
+                    { label: "Model", value: "openai/gpt-oss-20b" },
                   ].map(({ label, value }) => (
                     <div key={label} style={{
                       display: "flex",
