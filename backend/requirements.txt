@@ -12,6 +12,7 @@ langchain
 langchain-community
 langchain-core
 langchain-text-splitters
+langchain-huggingface
 
 # LLM providers
 langchain-groq
