@@ -40,10 +40,12 @@ def get_embeddings():
     if settings.use_pinecone_inference:
         logger.info("Using Pinecone inference for embeddings (no local model)")
         return None
-    from langchain_huggingface import HuggingFaceEmbeddings
-    logger.info(f"Loading local embeddings: {settings.embedding_model}")
-    return HuggingFaceEmbeddings(model_name=settings.embedding_model)
-
+    from langchain_voyageai import VoyageAIEmbeddings
+    logger.info(f"Loading Voyage AI embeddings: {settings.voyage_embedding_model}")
+    return VoyageAIEmbeddings(
+        model=settings.voyage_embedding_model,
+        voyage_api_key=settings.voyage_api_key,
+    )
 
 class PineconeInferenceWrapper(VectorStore):
     """

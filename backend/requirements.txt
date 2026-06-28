@@ -12,8 +12,8 @@ langchain
 langchain-community
 langchain-core
 langchain-text-splitters
-langchain-huggingface
-sentence-transformers
+langchain-voyageai
+
 
 # LLM providers
 langchain-groq

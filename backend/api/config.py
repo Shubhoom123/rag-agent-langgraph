@@ -38,6 +38,8 @@ class Settings(BaseSettings):
     hf_token: str = ""
     use_pinecone_inference: bool = False
     pinecone_inference_model: str = "multilingual-e5-large"
+    voyage_api_key: str = ""
+    voyage_embeding_model: str = "voyage-3-lite"
 
     # ------------------------------------------------------------------
     # Web search
