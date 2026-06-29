@@ -4,6 +4,8 @@ POST /api/ingest
 Upload a .txt or .pdf file and add it to the vector store.
 """
 import logging
+import os
+import json
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
@@ -52,19 +54,30 @@ def _extract_text_from_pdf(content: bytes) -> str:
         )
 
 
+def _init_firebase():
+    """Initialize Firebase Admin SDK using env var or file credentials."""
+    import firebase_admin
+    from firebase_admin import credentials as fb_creds
+    from api.config import settings
+
+    if not firebase_admin._apps:
+        service_account_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
+        if service_account_json:
+            cred = fb_creds.Certificate(json.loads(service_account_json))
+        elif settings.firebase_credentials_path:
+            cred = fb_creds.Certificate(settings.firebase_credentials_path)
+        else:
+            cred = fb_creds.ApplicationDefault()
+        firebase_admin.initialize_app(cred)
+
+
 def _get_user_upload_count(namespace: str) -> int:
     """Get docsIngested count from Firebase Firestore users collection."""
     try:
         import firebase_admin
-        from firebase_admin import firestore, credentials as fb_creds
-        from api.config import settings
+        from firebase_admin import firestore
 
-        if not firebase_admin._apps:
-            if settings.firebase_credentials_path:
-                cred = fb_creds.Certificate(settings.firebase_credentials_path)
-            else:
-                cred = fb_creds.ApplicationDefault()
-            firebase_admin.initialize_app(cred)
+        _init_firebase()
 
         db = firestore.client()
         doc = db.collection("users").document(namespace).get()
@@ -80,15 +93,9 @@ def _increment_user_upload_count(namespace: str):
     """Increment docsIngested in Firebase Firestore users collection."""
     try:
         import firebase_admin
-        from firebase_admin import firestore, credentials as fb_creds
-        from api.config import settings
+        from firebase_admin import firestore
 
-        if not firebase_admin._apps:
-            if settings.firebase_credentials_path:
-                cred = fb_creds.Certificate(settings.firebase_credentials_path)
-            else:
-                cred = fb_creds.ApplicationDefault()
-            firebase_admin.initialize_app(cred)
+        _init_firebase()
 
         db = firestore.client()
         ref = db.collection("users").document(namespace)
