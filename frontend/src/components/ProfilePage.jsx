@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { X, FileText, Mail, Calendar, Zap } from "lucide-react";
+import { X, Mail, Calendar } from "lucide-react";
 import { loadUserProfile } from "../firebase";
 
 function formatDate(ts) {
@@ -285,7 +285,6 @@ export default function ProfilePage({ user, chats, onClose }) {
                     alignItems: "baseline",
                   }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <Zap size={13} color="var(--accent)" />
                       <span style={{
                         fontSize: "0.75rem",
                         color: "var(--text-muted)",
@@ -393,18 +392,6 @@ export default function ProfilePage({ user, chats, onClose }) {
                   onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border)"}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: "var(--radius)",
-                      background: "rgba(74,222,128,0.08)",
-                      border: "1px solid rgba(74,222,128,0.15)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}>
-                      <FileText size={14} color="var(--accent)" />
-                    </div>
                     <div>
                       <div style={{
                         fontSize: "0.78rem",
