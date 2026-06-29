@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     use_pinecone_inference: bool = False
     pinecone_inference_model: str = "multilingual-e5-large"
     voyage_api_key: str = ""
-    voyage_embedding_model: str = "voyage-3-lite"
+    voyage_embedding_model: str = "voyage-4-lite"
 
     # ------------------------------------------------------------------
     # Web search

@@ -251,7 +251,7 @@ def get_vectorstore() -> VectorStore:
             logger.info(f"Creating Pinecone index: {settings.pinecone_index_name}")
             pc.create_index(
                 name=settings.pinecone_index_name,
-                dimension=384,
+                dimension=1024,
                 metric="cosine",
                 spec=ServerlessSpec(cloud="aws", region="us-east-1"),
             )

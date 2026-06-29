@@ -24,6 +24,7 @@ router = APIRouter()
 
 MAX_FILE_SIZE_MB = 25
 MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
+MAX_UPLOADS_PER_USER = 10
 
 splitter = RecursiveCharacterTextSplitter(
     chunk_size=1000,
@@ -51,6 +52,55 @@ def _extract_text_from_pdf(content: bytes) -> str:
         )
 
 
+def _get_user_upload_count(namespace: str) -> int:
+    """Get the number of uploads for a user from Firebase Firestore."""
+    try:
+        import firebase_admin
+        from firebase_admin import firestore, credentials as fb_creds
+        from api.config import settings
+
+        if not firebase_admin._apps:
+            if settings.firebase_credentials_path:
+                cred = fb_creds.Certificate(settings.firebase_credentials_path)
+            else:
+                cred = fb_creds.ApplicationDefault()
+            firebase_admin.initialize_app(cred)
+
+        db = firestore.client()
+        doc = db.collection("user_uploads").document(namespace).get()
+        if doc.exists:
+            return doc.to_dict().get("upload_count", 0)
+        return 0
+    except Exception as e:
+        logger.warning(f"Could not fetch upload count for {namespace}: {e}")
+        return 0
+
+
+def _increment_user_upload_count(namespace: str):
+    """Increment the upload count for a user in Firebase Firestore."""
+    try:
+        import firebase_admin
+        from firebase_admin import firestore, credentials as fb_creds
+        from api.config import settings
+
+        if not firebase_admin._apps:
+            if settings.firebase_credentials_path:
+                cred = fb_creds.Certificate(settings.firebase_credentials_path)
+            else:
+                cred = fb_creds.ApplicationDefault()
+            firebase_admin.initialize_app(cred)
+
+        db = firestore.client()
+        ref = db.collection("user_uploads").document(namespace)
+        doc = ref.get()
+        if doc.exists:
+            ref.update({"upload_count": firestore.Increment(1)})
+        else:
+            ref.set({"upload_count": 1, "uid": namespace})
+    except Exception as e:
+        logger.warning(f"Could not increment upload count for {namespace}: {e}")
+
+
 @router.post("/ingest", response_model=IngestResponse)
 async def ingest_document(
     request: Request,
@@ -63,9 +113,20 @@ async def ingest_document(
     raw_filename = file.filename or "unknown"
     filename = sanitize_filename(raw_filename)
 
-    # Use user_id from form if provided, otherwise fall back to auth uid
     namespace = user_id or user.uid
     logger.info(f"Ingest from user={namespace!r}, file={filename!r}")
+
+    # Skip upload limit check for local dev
+    if namespace != "local-dev":
+        upload_count = _get_user_upload_count(namespace)
+        if upload_count >= MAX_UPLOADS_PER_USER:
+            security_logger.warning(
+                f"UPLOAD_LIMIT_EXCEEDED | user={namespace!r} | count={upload_count}"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=f"Upload limit reached. Maximum {MAX_UPLOADS_PER_USER} documents per user.",
+            )
 
     content_type = file.content_type or ""
     is_pdf = filename.endswith(".pdf") or content_type == "application/pdf"
@@ -142,6 +203,10 @@ async def ingest_document(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to add documents to vector store.",
         )
+
+    # Increment upload count after successful ingest
+    if namespace != "local-dev":
+        _increment_user_upload_count(namespace)
 
     logger.info(f"Added {len(documents)} chunks from {filename!r} to namespace={namespace!r}")
 
