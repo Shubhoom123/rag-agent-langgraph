@@ -53,7 +53,7 @@ def _extract_text_from_pdf(content: bytes) -> str:
 
 
 def _get_user_upload_count(namespace: str) -> int:
-    """Get the number of uploads for a user from Firebase Firestore."""
+    """Get docsIngested count from Firebase Firestore users collection."""
     try:
         import firebase_admin
         from firebase_admin import firestore, credentials as fb_creds
@@ -67,9 +67,9 @@ def _get_user_upload_count(namespace: str) -> int:
             firebase_admin.initialize_app(cred)
 
         db = firestore.client()
-        doc = db.collection("user_uploads").document(namespace).get()
+        doc = db.collection("users").document(namespace).get()
         if doc.exists:
-            return doc.to_dict().get("upload_count", 0)
+            return doc.to_dict().get("docsIngested", 0)
         return 0
     except Exception as e:
         logger.warning(f"Could not fetch upload count for {namespace}: {e}")
@@ -77,7 +77,7 @@ def _get_user_upload_count(namespace: str) -> int:
 
 
 def _increment_user_upload_count(namespace: str):
-    """Increment the upload count for a user in Firebase Firestore."""
+    """Increment docsIngested in Firebase Firestore users collection."""
     try:
         import firebase_admin
         from firebase_admin import firestore, credentials as fb_creds
@@ -91,12 +91,12 @@ def _increment_user_upload_count(namespace: str):
             firebase_admin.initialize_app(cred)
 
         db = firestore.client()
-        ref = db.collection("user_uploads").document(namespace)
+        ref = db.collection("users").document(namespace)
         doc = ref.get()
         if doc.exists:
-            ref.update({"upload_count": firestore.Increment(1)})
+            ref.update({"docsIngested": firestore.Increment(1)})
         else:
-            ref.set({"upload_count": 1, "uid": namespace})
+            ref.set({"docsIngested": 1, "uid": namespace})
     except Exception as e:
         logger.warning(f"Could not increment upload count for {namespace}: {e}")
 
@@ -204,7 +204,7 @@ async def ingest_document(
             detail="Failed to add documents to vector store.",
         )
 
-    # Increment upload count after successful ingest
+    # Increment docsIngested after successful ingest
     if namespace != "local-dev":
         _increment_user_upload_count(namespace)
 
